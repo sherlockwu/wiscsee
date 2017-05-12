@@ -70,8 +70,8 @@ class SimulatorDESNew(Simulator):
     def run(self):
         self.env.process(self.host.run())
         self.env.process(self.ssd.run())
-
         self.env.run()
+        print("=== get here ===")
 
         self.record_post_run_stats()
 

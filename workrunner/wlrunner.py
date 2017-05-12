@@ -201,6 +201,7 @@ class WorkloadRunner(object):
             # Set number of CPUs
             cpuhandler.set_cpus(self.conf['n_online_cpus'])
 
+            #Kan: commented:
             self.prepare_device()
 
             # strat blktrace
@@ -217,6 +218,7 @@ class WorkloadRunner(object):
                 print 'Waiting for blktrace to start.....'
                 time.sleep(0.5)
 
+            #Kan: commented:
             self.build_fs()
 
             # Age the file system

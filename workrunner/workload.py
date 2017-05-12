@@ -87,6 +87,24 @@ class SimpleRandReadWrite(Workload):
         pass
 
 
+class leveldb_test(Workload):
+    def __init__(self, confobj, workload_conf_key = None):
+        super(leveldb_test, self).__init__(confobj, workload_conf_key)
+
+    def run(self):
+        mnt = self.conf["fs_mount_point"]
+        os.chdir(mnt)
+        print "====== get in ls_test"
+        cmd = "cp -r /users/kanwu/leveldb/app_leveldb/ " + mnt
+        subprocess.call(cmd, shell=True)
+	app_leveldb = mnt+"/app_leveldb/"
+        os.chdir(app_leveldb)
+        cmd = "./sample"
+        subprocess.call(cmd, shell=True)
+
+    def stop(self):
+        pass
+
 # class LinuxDD(Workload):
     # def __init__(self, confobj, workload_conf_key = None):
         # super(LinuxDD, self).__init__(confobj, workload_conf_key)

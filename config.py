@@ -248,16 +248,20 @@ class Config(dict):
             "dev_size_mb"      : None,
             "tmpfs_mount_point"     : "/mnt/tmpfs",
 
-            "device_path"           : "/dev/loop0", # or sth. like /dev/sdc1
+            #"device_path"           : "/dev/loop0", # or sth. like /dev/sdc1
+            "device_path"           : "/dev/sdc1", # or sth. like /dev/sdc1
             "dev_padding"      : 8*MB,
 
-            "enable_blktrace"       : False,
+            #"enable_blktrace"       : False,
+            "enable_blktrace"       : True,
             "dump_ext4_after_workload"  : True,
 
             "event_file_column_names"    : ['pid', 'action', 'operation', 'offset', 'size',
                     'timestamp', 'pre_wait_time', 'sync'],
 
-            "fs_mount_point"        : "/mnt/fsonloop",
+            #"fs_mount_point"        : "/mnt/fsonloop",
+            "fs_mount_point"        : "/mnt/ext4_test",
+            #"fs_mount_point"        : "/mnt/f2fs",
             "mnt_opts" : {
                 "ext4":   { 'discard': MOpt(opt_name = "discard",
                                              value = "discard",
