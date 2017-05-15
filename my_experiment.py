@@ -15,8 +15,10 @@ if __name__=='__main__':
     para['device_path'] = "/dev/sdc1"
     para['filesystem'] = "ext4"
     para['ftl'] = "dftldes"
+    para['lbabytes'] = 1024*1024*1024 
     Parameters = collections.namedtuple("Parameters", ','.join(para.keys()))
 
     # run this experiment
     obj = my_experiment( Parameters(**para) )
     obj.main()
+    

@@ -99,7 +99,7 @@ class leveldb_test(Workload):
         subprocess.call(cmd, shell=True)
 	app_leveldb = mnt+"/app_leveldb/"
         os.chdir(app_leveldb)
-        cmd = "./sample"
+        cmd = "./run_experiment.sh fillrandom"
         subprocess.call(cmd, shell=True)
 
     def stop(self):

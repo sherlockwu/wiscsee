@@ -453,7 +453,6 @@ class FlashTransmitMixin(object):
         lpns = self.conf.m_vpn_to_lpns(m_vpn)
         mapping_dict = self.mapping_on_flash.lpns_to_ppns(lpns)
 
-
         # as if we readlly read from flash
         m_ppn = self.directory.m_vpn_to_m_ppn(m_vpn)
 
