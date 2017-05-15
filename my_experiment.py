@@ -13,9 +13,10 @@ if __name__=='__main__':
     # set parameters
     para = experiment.get_shared_nolist_para_dict("leveldb_test", 16*MB)   # get shared parameters
     para['device_path'] = "/dev/sdc1"
-    para['filesystem'] = "ext4"
+    para['filesystem'] = "f2fs"
     para['ftl'] = "dftldes"
     para['lbabytes'] = 1024*1024*1024 #Bug? 
+    para['cache_mapped_data_bytes'] = int(para['lbabytes'] * 0.5)
     Parameters = collections.namedtuple("Parameters", ','.join(para.keys()))
 
     # run this experiment

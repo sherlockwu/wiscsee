@@ -145,6 +145,7 @@ class Experiment(object):
             self.conf['snapshot_erasure_count_dist'] = self.para.snapshot_erasure_count_dist
             self.conf['do_gc_after_workload'] = self.para.do_gc_after_workload
             self.conf.cache_mapped_data_bytes = int(self.para.cache_mapped_data_bytes)
+            print '=== get here with cache size: ' + str(self.conf.cache_mapped_data_bytes)
             self.conf['write_gc_log'] = self.para.write_gc_log
             self.conf['n_gc_procs'] = self.para.n_gc_procs
 
