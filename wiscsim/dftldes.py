@@ -1218,6 +1218,7 @@ class GlobalTranslationDirectory(object):
 
         self.flash_npage_per_block = self.conf.n_pages_per_block
         self.flash_num_blocks = self.conf.n_blocks_per_dev
+        print '======get here with page_per_block: ' + str(self.flash_npage_per_block) + ' blocks: ' + str(self.flash_num_blocks) 
         self.flash_page_size = self.conf.page_size
         self.total_pages = self.conf.total_num_pages()
         self.oob = oob

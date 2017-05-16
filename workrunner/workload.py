@@ -94,10 +94,10 @@ class leveldb_test(Workload):
     def run(self):
         mnt = self.conf["fs_mount_point"]
         os.chdir(mnt)
-        print "====== get in ls_test"
-        cmd = "cp -r /users/kanwu/leveldb/app_leveldb/ " + mnt
-        subprocess.call(cmd, shell=True)
-	app_leveldb = mnt+"/app_leveldb/"
+        print "====== get in leveldb_test"
+        #cmd = "cp -r /users/kanwu/leveldb/app_leveldb/ " + mnt
+        #subprocess.call(cmd, shell=True)
+	app_leveldb = "/users/kanwu/leveldb/app_leveldb/"
         os.chdir(app_leveldb)
         cmd = "./run_experiment.sh fillrandom"
         subprocess.call(cmd, shell=True)
