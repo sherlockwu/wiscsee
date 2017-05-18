@@ -159,7 +159,6 @@ class Config(dict):
             'exact bytes. rem:', rem
         self['flash_num_blocks'] = nblocks
 
-
     def sec_ext_to_page_ext(self, sector, count):
         """
         The sector extent has to be aligned with page

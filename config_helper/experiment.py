@@ -162,6 +162,7 @@ class Experiment(object):
             print 'N:', self.conf['nkftl']['n_blocks_in_data_group']
             print 'K:', self.conf['nkftl']['max_blocks_in_log_group']
             self.conf['nkftl']['max_ratio_of_log_blocks'] = self.para.max_log_blocks_ratio
+            # Kan: do not to count the snapshot_valid_ratios?
             self.conf['snapshot_valid_ratios'] = False
             self.conf['snapshot_erasure_count_dist'] = self.para.snapshot_erasure_count_dist
             self.conf['do_gc_after_workload'] = self.para.do_gc_after_workload
@@ -189,6 +190,8 @@ class Experiment(object):
             raise NotImplementedError()
 
         logicsize_mb = self.conf['dev_size_mb']
+        print 'logicsize_mb ' + str(logicsize_mb)
+        print 'over_provisioning ' + str(self.para.over_provisioning)
         self.conf.set_flash_num_blocks_by_bytes(
                 int(logicsize_mb * 2**20 * self.para.over_provisioning))
 
@@ -257,7 +260,7 @@ def get_shared_para_dict(expname, lbabytes):
             'enable_blktrace': [True],
             'enable_simulation': [True],
             'f2fs_gc_after_workload': [False],
-            'segment_bytes'  : [2*MB],
+            'segment_bytes'  : [2*MB],    # to set blocks per group
             'max_log_blocks_ratio': [100],
             'n_online_cpus'  : ['all'],
             'over_provisioning': [32], # 1.28 is a good number

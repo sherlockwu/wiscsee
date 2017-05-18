@@ -33,6 +33,8 @@ class WorkloadRunner(object):
         if not isinstance(confobj, config.Config):
             raise TypeError("confobj is not of type class config.Config".
                 format(type(confobj).__name__()))
+        
+
         self.conf = confobj
 
         if self.conf.device_type == 'loop':

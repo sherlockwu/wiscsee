@@ -904,7 +904,8 @@ class GarbageCollector(object):
             return
 
         procs = []
-        for dgn in range(self.conf.n_datagroups_per_dev()):
+        print '==== here, garbage collector: ' + str(self.conf.n_datagroups_per_dev())
+        for dgn in range(int(self.conf.n_datagroups_per_dev())):
             if dgn in self.log_mapping_table.log_group_info.keys():
                 p = self.env.process(self.clean_data_group(dgn, merge=merge))
                 procs.append(p)
@@ -2104,6 +2105,7 @@ class Ftl(ftlbuilder.FtlBuilder):
 
     def snapshot_erasure_count_dist(self):
         dist = self.block_pool.get_erasure_count_dist()
+        print('=============== erasure count dist')
         print self.env.now
         print dist
         self.recorder.append_to_value_list('ftl_func_erasure_count_dist',

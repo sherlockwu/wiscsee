@@ -46,10 +46,11 @@ class Ssd(SsdBase):
         self.flash_controller = controller.Controller3(
                 self.env, self.conf, self.recorder)
 
-        print 'initializing ssd...........', self.conf['ftl_type']
+        print '========== initializing ssd...........', self.conf['ftl_type']
 
         self.ftl = self._create_ftl()
 
+        print '========== this ftl: snapshot_valid_ratios: ', self.conf['snapshot_valid_ratios']
         self._snapshot_valid_ratios = self.conf['snapshot_valid_ratios']
         self._snapshot_erasure_count_dist = self.conf['snapshot_erasure_count_dist']
         self._snapshot_interval = self.conf['snapshot_interval']
@@ -270,6 +271,7 @@ class Ssd(SsdBase):
 
 
     def _valid_ratio_snapshot_process(self):
+        print '============== get in the process for valid_ratio_snapshot'
         while self._snapshot_valid_ratios is True:
             self.ftl.snapshot_valid_ratios()
             yield self.env.timeout(self._snapshot_interval)

@@ -36,6 +36,7 @@ if __name__=='__main__':
     # run experiments with different parameters
     #page_size_set = [2, 4, 8, 16]
     #n_pages_per_block_set = [64, 128, 256]
-    n_pages_per_block_set = [64]
+    n_pages_per_block_set = [256]
+    #n_channels_set = [4, 8, 16]
     n_channels_set = [4, 8, 16]
     run_exps(para, n_channels_set, n_pages_per_block_set)
