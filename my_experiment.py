@@ -11,11 +11,12 @@ class my_experiment(experiment.Experiment):
 
 if __name__=='__main__':
     # set parameters
-    para = experiment.get_shared_nolist_para_dict("leveldb_test", 1536*MB)   # get shared parameters
+    para = experiment.get_shared_nolist_para_dict("leveldb_test", 256*MB)   # get shared parameters
     para['device_path'] = "/dev/sdc1"
     para['filesystem'] = "f2fs"
     #para['ftl'] = "nkftl2"
     para['ftl'] = "dftldes"
+    para['do_gc_after_workload'] = True
     # for data block group
     #para['segment_bytes'] = 0.5*MB
     #para['log_group_factor'] = 1

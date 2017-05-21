@@ -16,14 +16,13 @@ def submit_exp(para):
     obj = my_experiment( Parameters(**para) )
     obj.main()
 
-def run_exps(para, n_channels_set, n_pages_per_block_set):
+def run_exps(para, n_segment_bytes_set, n_log_group_factor_set):
     # print
-    for n_channels in n_channels_set:
-        para['n_channels_per_dev'] = n_channels      # channels
-        for n_pages_per_block in n_pages_per_block_set:
-            print 'channels: '  + str(n_channels) + '\npages per block: ' + str(n_pages_per_block)
-            para['n_pages_per_block'] =  n_pages_per_block     # pages per block
-            para['stripe_size'] = n_pages_per_block/4
+    for n_segment_bytes in n_segment_bytes_set:
+        para['segment_bytes'] = n_segment_bytes     # To set block per group
+        for n_log_group_factor in n_log_group_factor_set:
+            print 'segment bytes: '  + str(n_segment_bytes) + '\nlog group factor: ' + str(n_log_group_factor)
+            para['log_group_factor'] =  n_log_group_factor     # factor of log blocks to data blocks
             # submit experiment
             submit_exp(para)
 
@@ -32,10 +31,11 @@ if __name__=='__main__':
     para = experiment.get_shared_nolist_para_dict("leveldb_test", 256*MB)   # get shared parameters
     para['device_path'] = "/dev/sdc1"
     para['filesystem'] = "f2fs"
-    para['ftl'] = "dftldes"
+    para['ftl'] = "nkftl2"
+    
     # run experiments with different parameters
-    #page_size_set = [2, 4, 8, 16]
-    n_pages_per_block_set = [64, 128, 256]
-    #n_channels_set = [4, 8, 16]
-    n_channels_set = [16]
-    run_exps(para, n_channels_set, n_pages_per_block_set)
+    #segment_bytes = [2, 4, 8, 16]
+    #n_pages_per_block_set = [64, 128, 256]
+    n_segment_bytes_set = [2*MB, 4*MB, 8*MB]
+    n_log_group_factor_set = [10]
+    run_exps(para, n_segment_bytes_set, n_log_group_factor_set)
