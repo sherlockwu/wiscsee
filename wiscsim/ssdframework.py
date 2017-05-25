@@ -287,7 +287,9 @@ class Ssd(SsdBase):
             yield self.env.timeout(self._snapshot_interval)
 
     def run(self):
+        print '======== start the Ssd here ========'
         procs = []
+        print '======== ncq_depth = ', self.n_processes, ', starting equal processes'
         for i in range(self.n_processes):
             p = self.env.process( self._process(i) )
             procs.append(p)

@@ -8,7 +8,8 @@ class Host(object):
         self.conf = conf
         self.env = simpy_env
         self.event_iter = event_iter
-
+ 
+        print '======== ncq_depth of SSD: ', self.conf['SSDFramework']['ncq_depth']
         self._ncq = NCQSingleQueue(
                 ncq_depth = self.conf['SSDFramework']['ncq_depth'],
                 simpy_env = self.env)
