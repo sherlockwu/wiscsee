@@ -1,0 +1,86 @@
+  8,33  17        1     0.000000000 30528  D  RS 536576 + 8 [db_bench]
+  8,33  17        2     0.000145927 30528  D  RS 524288 + 8 [db_bench]
+  8,33  17        3     0.004878836 30528  D RSM 36888 + 8 [db_bench]
+  8,33  17        4     0.016986249 30528  D  WS 524296 + 16 [db_bench]
+  8,33  17        5     0.016992114 30528  D  WS 532480 + 32 [db_bench]
+  8,33  17        6     0.016993976 30528  D  WS 536584 + 16 [db_bench]
+  8,33  17        7     0.017007933 30528  D   D 532512 + 8 [db_bench]
+  8,33  17        8     0.018009560     0  D WFSM 24576 + 24 [swapper/17]
+  8,33  17        9     0.018262324 30528  D  WS 524312 + 8 [db_bench]
+  8,33  17       10     0.018321425 30528  D  WS 532512 + 24 [db_bench]
+  8,33  17       11     0.018323507 30528  D  WS 536600 + 8 [db_bench]
+  8,33  17       12     0.018332162 30528  D   D 532536 + 8 [db_bench]
+  8,33  17       13     0.019073057     0  D WFSM 20480 + 24 [swapper/17]
+  8,33  17       14     0.019150047 30528  D  WS 532536 + 8 [db_bench]
+  8,33  17       15     0.019386550 30528  D  WS 532544 + 8 [db_bench]
+  8,33  17       16     0.020017044 30528  D  WS 524320 + 16 [db_bench]
+  8,33  17       17     0.020022157 30528  D  WS 532552 + 32 [db_bench]
+  8,33  17       18     0.020023900 30528  D  WS 536608 + 16 [db_bench]
+  8,33  17       19     0.020042543 30528  D   D 532584 + 8 [db_bench]
+  8,33  17       20     0.020807002     0  D WFSM 24576 + 24 [swapper/17]
+  8,33  17       21     0.021050138 30528  D  WS 524336 + 8 [db_bench]
+  8,33  17       22     0.021109381 30528  D  WS 532584 + 24 [db_bench]
+  8,33  17       23     0.021111403 30528  D  WS 536624 + 8 [db_bench]
+  8,33  17       24     0.021119622 30528  D   D 532608 + 8 [db_bench]
+  8,33  17       25     0.021903526     0  D WFSM 20480 + 24 [swapper/17]
+  8,33  17       26     0.021978344 30528  D  WS 532608 + 8 [db_bench]
+  8,33  17       27     0.022205540 30528  D  WS 532616 + 8 [db_bench]
+  8,33  12        1     0.032088588 30529  D  WS 53248 + 8 [db_bench]
+  8,33  14        1     1.038086712 30095  D   W 53256 + 32 [kworker/u66:1]
+  8,33   7        1     1.094806471     0  D WFSM 24576 + 24 [swapper/17]
+  8,33  15        1     1.076979094 30095  D  WS 524344 + 8 [kworker/u66:1]
+  8,33  15        2     1.093889638 30531  D  WS 532624 + 24 [sync]
+  8,33  15        3     1.093896885 30531  D  WS 536632 + 8 [sync]
+  8,33  15        4     1.093914558 30531  D   D 532648 + 8 [sync]
+CPU7 (8,33):
+ Reads Queued:           0,        0KiB	 Writes Queued:           0,        0KiB
+ Read Dispatches:        0,        0KiB	 Write Dispatches:        1,       12KiB
+ Reads Requeued:         0		 Writes Requeued:         0
+ Reads Completed:        0,        0KiB	 Writes Completed:        0,        0KiB
+ Read Merges:            0,        0KiB	 Write Merges:            0,        0KiB
+ Read depth:             3        	 Write depth:            31
+ IO unplugs:             0        	 Timer unplugs:           0
+CPU12 (8,33):
+ Reads Queued:           0,        0KiB	 Writes Queued:           0,        0KiB
+ Read Dispatches:        0,        0KiB	 Write Dispatches:        1,        4KiB
+ Reads Requeued:         0		 Writes Requeued:         0
+ Reads Completed:        0,        0KiB	 Writes Completed:        0,        0KiB
+ Read Merges:            0,        0KiB	 Write Merges:            0,        0KiB
+ Read depth:             3        	 Write depth:            31
+ IO unplugs:             0        	 Timer unplugs:           0
+CPU14 (8,33):
+ Reads Queued:           0,        0KiB	 Writes Queued:           0,        0KiB
+ Read Dispatches:        0,        0KiB	 Write Dispatches:        1,       16KiB
+ Reads Requeued:         0		 Writes Requeued:         0
+ Reads Completed:        0,        0KiB	 Writes Completed:        0,        0KiB
+ Read Merges:            0,        0KiB	 Write Merges:            0,        0KiB
+ Read depth:             3        	 Write depth:            31
+ IO unplugs:             0        	 Timer unplugs:           0
+CPU15 (8,33):
+ Reads Queued:           0,        0KiB	 Writes Queued:           0,        0KiB
+ Read Dispatches:        0,        0KiB	 Write Dispatches:        4,       24KiB
+ Reads Requeued:         0		 Writes Requeued:         0
+ Reads Completed:        0,        0KiB	 Writes Completed:        0,        0KiB
+ Read Merges:            0,        0KiB	 Write Merges:            0,        0KiB
+ Read depth:             3        	 Write depth:            31
+ IO unplugs:             0        	 Timer unplugs:           0
+CPU17 (8,33):
+ Reads Queued:           0,        0KiB	 Writes Queued:           0,        0KiB
+ Read Dispatches:        3,       12KiB	 Write Dispatches:       24,      184KiB
+ Reads Requeued:         0		 Writes Requeued:         0
+ Reads Completed:        0,        0KiB	 Writes Completed:        0,        0KiB
+ Read Merges:            0,        0KiB	 Write Merges:            0,        0KiB
+ Read depth:             3        	 Write depth:            31
+ IO unplugs:             0        	 Timer unplugs:           0
+
+Total (8,33):
+ Reads Queued:           0,        0KiB	 Writes Queued:           0,        0KiB
+ Read Dispatches:        3,       12KiB	 Write Dispatches:       31,      240KiB
+ Reads Requeued:         0		 Writes Requeued:         0
+ Reads Completed:        0,        0KiB	 Writes Completed:        0,        0KiB
+ Read Merges:            0,        0KiB	 Write Merges:            0,        0KiB
+ IO unplugs:             0        	 Timer unplugs:           0
+
+Throughput (R/W): 0KiB/s / 0KiB/s
+Events (8,33): 34 entries
+Skips: 0 forward (0 -   0.0%)

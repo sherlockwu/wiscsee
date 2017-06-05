@@ -112,7 +112,7 @@ class Experiment(object):
         self.conf['SSDFramework']['ncq_depth'] = self.para.ssd_ncq_depth
 
         #self.conf['flash_config']['page_size'] = 2048
-        self.conf['flash_config']['page_size'] = 1024*8
+        self.conf['flash_config']['page_size'] = self.para.page_size
         self.conf['flash_config']['n_pages_per_block'] = self.para.n_pages_per_block
         self.conf['flash_config']['n_blocks_per_plane'] = 2
         self.conf['flash_config']['n_planes_per_chip'] = 1

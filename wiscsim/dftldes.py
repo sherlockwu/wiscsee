@@ -24,7 +24,6 @@ from .blkpool import BlockPool, MOST_ERASED, LEAST_ERASED
 from .bitmap import FlashBitmap2
 
 
-
 UNINITIATED, MISS = ('UNINIT', 'MISS')
 DATA_BLOCK, TRANS_BLOCK = ('data_block', 'trans_block')
 random.seed(0)
@@ -71,7 +70,142 @@ DATA_USER = "data.user"
 # move data page during gc (including read and write)
 DATA_CLEANING = "data.cleaning"
 
+#Kan
 
+DEBUG_KAN = False
+PRINT_KAN = False
+
+class Helper_kan(object):
+    def add_config(self, Ftl):
+        self.conf = Ftl.conf   
+        self.channels=[[] for i in range(self.conf.n_channels_per_dev)]
+        self.channels_delete=[[] for i in range(self.conf.n_channels_per_dev)]
+    
+    def get_channel_num(self, ppn):
+        return ppn/(self.conf.n_pages_per_block * self.conf.n_blocks_per_channel)
+
+    def get_inchannel_ppn(self, ppn):
+        return ppn%(self.conf.n_pages_per_block * self.conf.n_blocks_per_channel)
+
+#Kan: for trace
+    def print_channels(self):
+        if PRINT_KAN == False:
+            return
+        print '========channels situation========'
+        for i in range(0,len(self.channels)):
+            print i, ': '
+            last_block = 0
+            for x in self.channels[i]:
+                if x[0] == last_block:
+                    sys.stdout.write(str(x))
+                    sys.stdout.flush()
+                else:
+                    sys.stdout.write('\n'+str(x))
+                    sys.stdout.flush()
+                    last_block = x[0]
+
+            print '\n!delete: ', self.channels_delete[i], '\n'
+    def ppn_to_block(self, ppn):
+        return ppn / self.conf.n_pages_per_block, ppn % self.conf.n_pages_per_block
+
+    def seperate_to_channels(self, ppns):
+        # pass in pure ppns
+        last_group = []
+        last_channel = self.get_channel_num(ppns[0])
+        
+        result = []
+        for ppn in ppns:
+            now_channel = self.get_channel_num(ppn)
+            if now_channel!=last_channel:
+                result.append(last_group)
+                last_group= [ppn]
+                last_channel = self.get_channel_num(ppn)
+            else:
+                last_group.append(ppn)
+
+        result.append(last_group)
+        return result
+        # return pure devided ppns
+
+
+    def seperate_to_blocks(self, ppns):
+        # passed in should be in channel ppn
+        # return start block, block-off, count
+        last_block, last_start = self.ppn_to_block(ppns[0])
+        last_count = 0
+
+        result = []
+        tmp = 2
+        for ppn in ppns:
+            now_block = (ppn)/ self.conf.n_pages_per_block
+            if now_block != last_block:
+                # wrap-up last
+                result.append([last_block, last_start, last_count])
+                # generate a new
+                last_block, last_start = self.ppn_to_block(ppn)
+                last_count = 1
+            else:
+                # add to last
+                last_count = last_count + 1
+
+        result.append([last_block, last_start, last_count])
+        return result
+
+    def channels_add(self, ppns):
+        #helper_kan.channels_add(helper_kan.get_channel_num(ppns[0]), helper_kan.get_inchannel_ppn(ppns[0]), seg_ext.lpn_count)
+        
+        # seperate to channels
+        ppn_in_diff_channel = self.seperate_to_channels(ppns)
+        for ppn_group in ppn_in_diff_channel:
+            # seperate to blocks
+            channel = self.get_channel_num(ppn_group[0])
+            # change to in channel ppns
+            result = [self.get_inchannel_ppn(x) for x in ppn_group]
+            result = self.seperate_to_blocks(result)
+            # Print something
+            if DEBUG_KAN:
+                print '      write to channel:', channel
+                print '                       ', result
+            # record down
+            for block, block_off, count in result:
+                self.channels[channel].append([block, block_off, count, "{0:.2f}".format(float(count)/self.conf.n_pages_per_block)])
+                self.channels[channel].sort()
+            #self.channels[channel].append([ppn_start, count, "{0:.2f}".format(float(count)/self.conf.n_pages_per_block)])
+            #self.channels[channel].sort()
+
+    def combine_or_insert_delete(self, channel, block, block_off, count):
+        status = False
+        for x in self.channels_delete[channel]:
+            block_cmp = x[0]
+            block_off_cmp = x[1]
+            count_cmp = x[2]
+            if block_cmp > block:
+                break
+            if block_cmp!=block:
+                continue
+            # combine
+            if block_off_cmp+count_cmp == block_off:
+                #count_cmp = count_cmp + count
+                x[2] = x[2] + count
+                status = True
+            if block_off + count == block_off_cmp:
+                #block_off_cmp = block_off
+                x[1] = block_off
+                #count_cmp = count_cmp + count
+                x[2] = x[2] + count
+                status = True
+        if status == False:
+            self.channels_delete[channel].append([block, block_off, count])
+        self.channels_delete[channel].sort()
+
+    def channels_del(self, channel, ppns):
+        # find block block_off
+        result = self.seperate_to_blocks(ppns)
+        for block, block_off, count in result:
+            # try to combine the extent
+            self.combine_or_insert_delete(channel, block, block_off, count)
+
+helper_kan = Helper_kan()
 
 class Ftl(object):
     def __init__(self, confobj, recorderobj, flashcontrollerobj, env):
@@ -128,6 +262,9 @@ class Ftl(object):
         self.pre_discarded_bytes = 0
         self.pre_read_bytes = 0
         self.display_interval = 4 * MB
+   
+        # Kan: for tracing
+        helper_kan.add_config(self)
 
     def _check_segment_config(self):
         if self.conf['segment_bytes'] % (self.conf.n_pages_per_block \
@@ -141,6 +278,7 @@ class Ftl(object):
 
         return ppns
 
+
     def get_ppns_to_write(self, ext):
         exts_by_seg = split_ext_by_segment(self.conf.n_pages_per_segment, ext)
         mapping = {}
@@ -148,6 +286,11 @@ class Ftl(object):
             ppns = self.block_pool.next_n_data_pages_to_program_striped(
                     n=seg_ext.lpn_count, seg_id=seg_id,
                     choice=LEAST_ERASED)
+            # Kan
+            if DEBUG_KAN: 
+                print '      seg_id:', seg_id, '(', seg_ext.lpn_start, ',', seg_ext.lpn_start+seg_ext.lpn_count-1, ')'
+            #helper_kan.channels_add(helper_kan.get_channel_num(ppns[0]), helper_kan.get_inchannel_ppn(ppns[0]), seg_ext.lpn_count)
+            helper_kan.channels_add(ppns)
             mapping.update( dict(zip(seg_ext.lpn_iter(), ppns)) )
         return mapping
 
@@ -163,10 +306,14 @@ class Ftl(object):
 
     def write_ext(self, extent):
         req_size = extent.lpn_count * self.conf.page_size
+        if DEBUG_KAN:
+            print '=== writing ', "{0:.2f}".format(float(extent.lpn_count)/self.conf.n_pages_per_block), 'block'
+        
         self.recorder.add_to_general_accumulater('traffic', 'write', req_size)
         self.written_bytes += req_size
         if self.written_bytes > self.pre_written_bytes + self.display_interval:
-            print 'Written (MB)', self.pre_written_bytes / MB, 'writing', round(float(req_size) / MB, 2)
+            #Kan
+            #print 'Written (MB)', self.pre_written_bytes / MB, 'writing', round(float(req_size) / MB, 2)
             sys.stdout.flush()
             self.pre_written_bytes = self.written_bytes
 
@@ -175,7 +322,7 @@ class Ftl(object):
 
         exts_in_mvpngroup = split_ext_to_mvpngroups(self.conf, extent)
         new_mappings = self.get_ppns_to_write(extent)
-
+        #print 'new_mappings: ', new_mappings
         procs = []
         for ext_single_m_vpn in exts_in_mvpngroup:
             ppns_of_ext = self._ppns_to_write(ext_single_m_vpn, new_mappings)
@@ -222,7 +369,7 @@ class Ftl(object):
         """
         old_ppns = yield self.env.process(
                 self._mappings.lpns_to_ppns(lpns, tag))
-
+        
         for lpn, old_ppn, new_ppn in zip(lpns, old_ppns, new_ppns):
             yield self.env.process(
                 self._update_metadata_for_relocating_lpn(
@@ -372,6 +519,7 @@ class Ftl(object):
         ratios = victim_blocks.get_valid_ratio_counter_of_used_blocks()
         self.recorder.append_to_value_list('ftl_func_valid_ratios',
                 ratios)
+        helper_kan.print_channels()
 
     def snapshot_user_traffic(self):
         self.recorder.append_to_value_list('ftl_func_user_traffic',
@@ -1771,7 +1919,7 @@ class OutOfBandAreas(object):
         #    if the content is new from FS, timestamp is the timestamp of the
         #    LPN
         #    if the content is copied from other flash block, timestamp is the
-        #    same as the previous ppn
+        #    same as the previouFtln
         # 2. discarding, and reading a ppn does not change it.
         # 3. erasing a block will remove all the timestamps of the block
         # 4. so cur_timestamp can only be advanced by LBA operations
@@ -1848,6 +1996,12 @@ class OutOfBandAreas(object):
             self.invalidate_ppn(ppn)
 
     def invalidate_ppn(self, ppn):
+        # Kan
+        to_invalidate_block, to_invalidate_block_off = helper_kan.ppn_to_block(helper_kan.get_inchannel_ppn(ppn))
+        if DEBUG_KAN:
+            print '=== invalidate (', helper_kan.get_channel_num(ppn), ',', to_invalidate_block,',', to_invalidate_block_off, ',', helper_kan.get_inchannel_ppn(ppn), ')'
+        helper_kan.channels_del(helper_kan.get_channel_num(ppn), [helper_kan.get_inchannel_ppn(ppn)])
+        
         self.states.invalidate_page(ppn)
         block, _ = self.conf.page_to_block_off(ppn)
         self.last_inv_time_of_block[block] = datetime.datetime.now()

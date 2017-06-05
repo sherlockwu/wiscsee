@@ -88,6 +88,7 @@ class Ssd(SsdBase):
     def _process(self, pid):
         for req_i in itertools.count():
             host_event = yield self.ncq.queue.get()
+            print '======', host_event, pid
 
             slot_req = self.ncq.slots.request()
             yield slot_req
@@ -124,7 +125,7 @@ class Ssd(SsdBase):
                 # EventA, OP_NOOPsx9999, OP_BARRIER, OP_NOOPSX9999, EventB
                 # OP_BARRIER will wait util EventA finishes. The first OP_NOOP
                 # x9999 makes sure eventA get a slot before barrier
-
+                print '!!!!!!!!!!!!!!!!!!get a barrier !!!!!!!!!!!!!!!!!!!!!'
                 yield self.env.process(self._barrier())
 
             elif operation == OP_NOOP:

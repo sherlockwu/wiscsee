@@ -244,11 +244,15 @@ class Controller3(Controller):
     With tag, and recorder
     """
     def __init__(self, simpy_env, conf, recorderobj):
+        print '================== using controller3'
         super(Controller3, self).__init__(simpy_env, conf)
 
         self.recorder = recorderobj
         self.channels = [Channel3(self.env, conf, self.recorder, i)
                 for i in range( self.n_channels_per_dev)]
+        
+        # Kan: for tracing
+        self.channels_status = [False for i in range(self.n_channels_per_dev)]
 
     def execute_request_list(self, flash_request_list, tag):
         procs = []
@@ -295,6 +299,19 @@ class Controller3(Controller):
         yield self.env.process( self.execute_request_list(flash_reqs, tag) )
 
     def execute_request(self, flash_request, tag):
+        # kan, for tracing:
+        curr_channel = flash_request.addr.channel
+        #print '===', self.channels_status
+        #print '   ', 'request ', curr_channel
+        if self.channels_status[curr_channel] == False:
+            self.channels_status[curr_channel] = True
+        status = True
+        for i in self.channels_status:
+            if i==False:
+                status = False
+        if status == True:
+            print '!!!!!!!!!!!!1all channels are in use!!!!!!!'
+
         self.recorder.count_me('flash_ops', flash_request.operation)
         if flash_request.operation == OP_READ:
             yield self.env.process(
@@ -309,6 +326,7 @@ class Controller3(Controller):
             raise RuntimeError("operation {} is not supported".format(
                 flash_request.operation))
 
+        self.channels_status[curr_channel] = False
 
 class Channel(object):
     """
@@ -439,6 +457,11 @@ class Channel3(Channel2):
         If you want to know how long it takes, use env.now before and after
         the operation.
         """
+        #print '=== prepare to write to', self.channel_id
+        #if self.resource.count>0:
+        #    print '    held by', self.resource.users
+        #else:
+        #    print '================================directly get by:', hash(self)
         with self.resource.request() as request:
             yield request
             s = self.env.now
@@ -453,6 +476,11 @@ class Channel3(Channel2):
                     start_time=s, end_time=e, tag=tag)
 
     def read_page(self, tag, addr = None):
+        #print '*** prepare to read from', self.channel_id
+        #if self.resource.count>0:
+        #    print '    held by', self.resource.users
+        #else:
+        #    print '********************************directly get by:', hash(self)
         with self.resource.request() as request:
             yield request
             s = self.env.now

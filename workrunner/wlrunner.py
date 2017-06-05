@@ -213,6 +213,7 @@ class WorkloadRunner(object):
                 trace_filter=['issue', 'complete']
             else:
                 trace_filter=['issue']
+                print 'get here!'
 
             self.blktracer_prepfs.start_tracing_and_collecting(trace_filter=trace_filter)
             time.sleep(1)
