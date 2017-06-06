@@ -1,7 +1,7 @@
 {
     "stop_sim_on_bytes": "inf", 
     "simulator_enable_interval": false, 
-    "hash": 2707345685474535480, 
+    "hash": -2453288078689581611, 
     "snapshot_interval": 100000000.0, 
     "high_log_block_ratio": 0.4, 
     "wear_leveling_diff": 10, 
@@ -119,9 +119,9 @@
     "do_fstrim": false, 
     "dev_padding": 8388608, 
     "ftl_type": "ftlcounter", 
-    "time": "06-05-21-06-21", 
+    "time": "06-05-22-22-36", 
     "age_workload_class": "NoOp", 
-    "result_dir": "/tmp/results/trace_result_1000000/subexp-8038369053552104096-f2fs-06-05-21-06-21-2707345685474535480", 
+    "result_dir": "/tmp/results/trace_result_1000000/subexp-8038369053552104096-f2fs-06-05-22-22-36--2453288078689581611", 
     "hybridmapftl": {
         "low_log_block_ratio": 0.32
     }, 

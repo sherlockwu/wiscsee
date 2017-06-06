@@ -522,13 +522,36 @@ class Ftl(object):
         helper_kan.print_channels()
 
     def snapshot_user_traffic(self):
+        # write down last time written/read bytes
+        if self.written_bytes == 0:
+            self.last_written = 0
+        if self.read_bytes == 0:
+            self.last_read = 0
+        
+        # stats for average empty channels
+        if self.flash.request_count == 0:
+            average_empty_channels = self.flash.n_channels_per_dev
+        else:
+            average_empty_channels = float(self.flash.empty_channels_count)/self.flash.request_count
+
         self.recorder.append_to_value_list('ftl_func_user_traffic',
                 {'timestamp': self.env.now/float(SEC),
-                 'write_traffic_size': self.written_bytes,
-                 'read_traffic_size': self.read_bytes,
+                 'write_traffic_size': self.written_bytes - self.last_written,
+                 'read_traffic_size': self.read_bytes - self.last_read,
                  'discard_traffic_size': self.discarded_bytes,
+                 # Kan: to see the throughput and average_empty_channels
+                 'throughput': float(self.written_bytes + self.read_bytes - self.last_written - self.last_read)/(1024*1024)*100,
+                 'average_empty_channels': average_empty_channels,
+                 'request_count': self.flash.request_count,
                  },
                 )
+
+        self.last_written = self.written_bytes
+        self.last_read = self.read_bytes
+
+        # reset numbers for empty channels
+        self.flash.empty_channels_count = 0
+        self.flash.request_count = 0
 
     def snapshot_erasure_count_dist(self):
         dist = self.block_pool.get_erasure_count_dist()

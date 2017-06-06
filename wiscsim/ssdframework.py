@@ -88,7 +88,8 @@ class Ssd(SsdBase):
     def _process(self, pid):
         for req_i in itertools.count():
             host_event = yield self.ncq.queue.get()
-            print '======', host_event, pid
+            # Kan, tracing the event
+            #print '======', host_event, pid
 
             slot_req = self.ncq.slots.request()
             yield slot_req
@@ -272,7 +273,6 @@ class Ssd(SsdBase):
 
 
     def _valid_ratio_snapshot_process(self):
-        print '============== get in the process for valid_ratio_snapshot'
         while self._snapshot_valid_ratios is True:
             self.ftl.snapshot_valid_ratios()
             yield self.env.timeout(self._snapshot_interval)
@@ -280,7 +280,9 @@ class Ssd(SsdBase):
     def _user_traffic_size_snapshot_process(self):
         while self._snapshot_user_traffic is True:
             self.ftl.snapshot_user_traffic()
-            yield self.env.timeout(0.1*SEC)
+            #yield self.env.timeout(0.1*SEC)
+            # Kan, slower the traffic to calculate throughput
+            yield self.env.timeout(0.01*SEC)
 
     def _erasure_count_dist_snapshot_process(self):
         while self._snapshot_erasure_count_dist is True:

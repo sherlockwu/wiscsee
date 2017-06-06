@@ -51,7 +51,7 @@ def run_exps(page_size_set, n_pages_per_block_set, n_channels_set, cache_coverag
                     	print 'segment_bytes: ', n_segment_bytes, ' MB'
                     	
 			# set the output exp name
-                    	exp_name = 'tryftlcounter1000000_segment_' + str(n_segment_bytes) + '_pagesize_' + str(page_size) + '_pagesperblock_' + str(n_pages_per_block) + '_channels_' + str(n_channels) + '_striperatio_' + str(n_stripe_size)
+                    	exp_name = 'fillthenread_segment_' + str(n_segment_bytes) + '_pagesize_' + str(page_size) + '_pagesperblock_' + str(n_pages_per_block) + '_channels_' + str(n_channels) + '_striperatio_' + str(n_stripe_size)
                     	print '============================ genearting ' , exp_name
                     	
                     	for cache_coverage in cache_coverage_set:
@@ -59,8 +59,8 @@ def run_exps(page_size_set, n_pages_per_block_set, n_channels_set, cache_coverag
                         	para = experiment.get_shared_nolist_para_dict(exp_name, 256*MB)
                         	para.update({
                             	'ftl': "dftldes",
-                            	"mkfs_path": "/users/kanwu/wiscsee/benchmark_files/fillrandom/blkparse-events-for-ftlsim-mkfs.txt",
-                            	"ftlsim_path": "/users/kanwu/wiscsee/benchmark_files/fillrandom/blkparse-events-for-ftlsim.txt",
+                            	"mkfs_path": "/users/kanwu/wiscsee/benchmark_files/fillthenread/blkparse-events-for-ftlsim-mkfs.txt",
+                            	"ftlsim_path": "/users/kanwu/wiscsee/benchmark_files/fillthenread/blkparse-events-for-ftlsim.txt",
                             	'ssd_ncq_depth': 31, # For Queue Depth test
                                 'segment_bytes': n_segment_bytes*1024*1024,
                             	'page_size': page_size*1024,

@@ -252,7 +252,8 @@ class Controller3(Controller):
                 for i in range( self.n_channels_per_dev)]
         
         # Kan: for tracing
-        self.channels_status = [False for i in range(self.n_channels_per_dev)]
+        self.request_count = 0 # how many request
+        self.empty_channels_count = 0
 
     def execute_request_list(self, flash_request_list, tag):
         procs = []
@@ -298,19 +299,29 @@ class Controller3(Controller):
                 op = 'erase')
         yield self.env.process( self.execute_request_list(flash_reqs, tag) )
 
+    def check_empty_channels(self):
+        # check each channel
+        empty_channels_num = 0
+        for cur_channel in self.channels:
+            if cur_channel.resource.count == 0:
+                # no users
+                empty_channels_num += 1
+        return empty_channels_num
+ 
     def execute_request(self, flash_request, tag):
         # kan, for tracing:
+        self.request_count += 1
         curr_channel = flash_request.addr.channel
-        #print '===', self.channels_status
-        #print '   ', 'request ', curr_channel
-        if self.channels_status[curr_channel] == False:
-            self.channels_status[curr_channel] = True
-        status = True
-        for i in self.channels_status:
-            if i==False:
-                status = False
-        if status == True:
-            print '!!!!!!!!!!!!1all channels are in use!!!!!!!'
+        curr_empty_channels = self.check_empty_channels()
+        
+        if self.channels[flash_request.addr.channel].resource.count == 0:
+            curr_empty_channels -= 1
+
+        if curr_empty_channels == 0:
+            print '!!!!!!!!!!!!all channels are in use!!!!!!!!!!'
+        self.empty_channels_count += curr_empty_channels
+
+
 
         self.recorder.count_me('flash_ops', flash_request.operation)
         if flash_request.operation == OP_READ:
@@ -325,8 +336,7 @@ class Controller3(Controller):
         else:
             raise RuntimeError("operation {} is not supported".format(
                 flash_request.operation))
-
-        self.channels_status[curr_channel] = False
+        
 
 class Channel(object):
     """
