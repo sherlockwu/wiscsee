@@ -282,7 +282,7 @@ class Ssd(SsdBase):
             self.ftl.snapshot_user_traffic()
             #yield self.env.timeout(0.1*SEC)
             # Kan, slower the traffic to calculate throughput
-            yield self.env.timeout(0.01*SEC)
+            yield self.env.timeout(0.1*SEC)
 
     def _erasure_count_dist_snapshot_process(self):
         while self._snapshot_erasure_count_dist is True:

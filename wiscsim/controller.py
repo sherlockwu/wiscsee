@@ -317,8 +317,8 @@ class Controller3(Controller):
         if self.channels[flash_request.addr.channel].resource.count == 0:
             curr_empty_channels -= 1
 
-        if curr_empty_channels == 0:
-            print '!!!!!!!!!!!!all channels are in use!!!!!!!!!!'
+        #if curr_empty_channels == 0:
+        #    print '!!!!!!!!!!!!all channels are in use!!!!!!!!!!'
         self.empty_channels_count += curr_empty_channels
 
 

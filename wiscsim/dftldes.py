@@ -284,8 +284,11 @@ class Ftl(object):
         mapping = {}
         for seg_id, seg_ext in exts_by_seg.items():
             ppns = self.block_pool.next_n_data_pages_to_program_striped(
-                    n=seg_ext.lpn_count, seg_id=seg_id,
+                    n=10*seg_ext.lpn_count, seg_id=seg_id,
                     choice=LEAST_ERASED)
+            #ppns = self.block_pool.next_n_data_pages_to_program_striped(
+            #        n=seg_ext.lpn_count, seg_id=seg_id,
+            #        choice=LEAST_ERASED)
             # Kan
             if DEBUG_KAN: 
                 print '      seg_id:', seg_id, '(', seg_ext.lpn_start, ',', seg_ext.lpn_start+seg_ext.lpn_count-1, ')'

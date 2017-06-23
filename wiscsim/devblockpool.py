@@ -210,14 +210,28 @@ class MultiChannelBlockPool(MultiChannelBlockPoolBase):
         We will try to use all the available pages in the one channels'
         current block before going to the next.
         """
+        
         remaining = n
         if stripe_size == 'infinity':
             stripe_size = float('inf')
 
         ret_ppns = []
         empty_channels = set()
+        # Kan: to judge whether two large requests will be interleaved
+        kan_last_channel = -1
         while remaining > 0 and len(empty_channels) < self.n_channels:
             cur_channel_id = self._next_channel
+            # Kan
+            if kan_last_channel != -1:
+                if cur_channel_id != (kan_last_channel+1)%self.n_channels :
+                    print 'interleaved: ', kan_last_channel, cur_channel_id
+                    print 'tried to get ', n, 'pages'
+            
+            kan_last_channel = cur_channel_id
+
+
+
+    
             req = min(remaining, stripe_size)
             ppns = self._next_ppns_in_channel(
                     channel_id=cur_channel_id,
