@@ -105,6 +105,25 @@ class leveldb_test(Workload):
     def stop(self):
         pass
 
+class external_sort_bench(Workload):
+    def __init__(self, confobj, workload_conf_key = None):
+        super(external_sort_bench, self).__init__(confobj, workload_conf_key)
+
+    def run(self):
+        mnt = self.conf["fs_mount_point"]
+        os.chdir(mnt)
+        print "====== get in external sorting benchmark"
+        #cmd = "cp -r /users/kanwu/leveldb/app_leveldb/ " + mnt
+        #subprocess.call(cmd, shell=True)
+	app_leveldb = "/users/kanwu/external_sort/code/"
+        os.chdir(app_leveldb)
+        cmd = "./merge_sort 1048576 "
+        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!executing ", cmd
+        subprocess.call(cmd, shell=True)
+
+    def stop(self):
+        pass
+
 # class LinuxDD(Workload):
     # def __init__(self, confobj, workload_conf_key = None):
         # super(LinuxDD, self).__init__(confobj, workload_conf_key)

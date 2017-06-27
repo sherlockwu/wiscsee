@@ -7,14 +7,14 @@ import config
 
 class my_experiment(experiment.Experiment):
     def setup_workload(self):
-       self.conf['workload_class'] = 'leveldb_test'
+       self.conf['workload_class'] = 'external_sort_bench'
 
 if __name__=='__main__':
     # set parameters
-    para = experiment.get_shared_nolist_para_dict("trace_result_1000000", 256*MB)   # get shared parameters
+    para = experiment.get_shared_nolist_para_dict("trace_external_merge_sort", 8*512*MB)   # get shared parameters
     para.update({
                             	'ftl': "ftlcounter",
-                            	'ssd_ncq_depth': 31, # For Queue Depth test
+                            	'ssd_ncq_depth': 32, # For Queue Depth test
                                 'segment_bytes': 128*1024*1024,
                                 'trace_issue_and_complete': True, # For trace ncq C
                             	'page_size': 2*1024,
@@ -24,7 +24,7 @@ if __name__=='__main__':
                             	'cache_mapped_data_bytes': 268435456,
                                 'only_get_traffic': False,
     })
-    para['device_path'] = "/dev/loop0"
+    para['device_path'] = "/dev/sdc1"
     para['filesystem'] = "f2fs"
     #para['ftl'] = "ftlcounter" # for see ncq_depth
     para['enable_simulation'] = True

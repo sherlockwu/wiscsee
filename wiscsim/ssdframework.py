@@ -126,7 +126,6 @@ class Ssd(SsdBase):
                 # EventA, OP_NOOPsx9999, OP_BARRIER, OP_NOOPSX9999, EventB
                 # OP_BARRIER will wait util EventA finishes. The first OP_NOOP
                 # x9999 makes sure eventA get a slot before barrier
-                print '!!!!!!!!!!!!!!!!!!get a barrier !!!!!!!!!!!!!!!!!!!!!'
                 yield self.env.process(self._barrier())
 
             elif operation == OP_NOOP:
@@ -279,10 +278,11 @@ class Ssd(SsdBase):
 
     def _user_traffic_size_snapshot_process(self):
         while self._snapshot_user_traffic is True:
+            print("!!!!!!!!!!!!!!!!!!!get here!!!!!!!!!!!!!");
             self.ftl.snapshot_user_traffic()
             #yield self.env.timeout(0.1*SEC)
             # Kan, slower the traffic to calculate throughput
-            yield self.env.timeout(0.1*SEC)
+            yield self.env.timeout(0.00001*SEC)
 
     def _erasure_count_dist_snapshot_process(self):
         while self._snapshot_erasure_count_dist is True:
@@ -297,15 +297,19 @@ class Ssd(SsdBase):
             p = self.env.process( self._process(i) )
             procs.append(p)
 
-        p = self.env.process( self._valid_ratio_snapshot_process() )
-        procs.append(p)
+        # Kan: to eliminate time
+        #p = self.env.process( self._valid_ratio_snapshot_process() )
+        #procs.append(p)
 
-        p = self.env.process( self._erasure_count_dist_snapshot_process() )
-        procs.append(p)
+        # Kan: to eliminate time
+        #p = self.env.process( self._erasure_count_dist_snapshot_process() )
+        #procs.append(p)
 
-        p = self.env.process( self._wear_leveling_process() )
-        procs.append(p)
+        # Kan: to eliminate time
+        #p = self.env.process( self._wear_leveling_process() )
+        #procs.append(p)
 
+        # Kan: also for counting each channel's workload
         p = self.env.process( self._user_traffic_size_snapshot_process() )
         procs.append(p)
 

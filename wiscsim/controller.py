@@ -309,17 +309,18 @@ class Controller3(Controller):
         return empty_channels_num
  
     def execute_request(self, flash_request, tag):
-        # kan, for tracing:
-        self.request_count += 1
-        curr_channel = flash_request.addr.channel
-        curr_empty_channels = self.check_empty_channels()
         
-        if self.channels[flash_request.addr.channel].resource.count == 0:
-            curr_empty_channels -= 1
+        # Kan: for tracing:
+        #self.request_count += 1
+        #curr_channel = flash_request.addr.channel
+        #curr_empty_channels = self.check_empty_channels()
+        
+        #if self.channels[flash_request.addr.channel].resource.count == 0:
+        #    curr_empty_channels -= 1
 
         #if curr_empty_channels == 0:
         #    print '!!!!!!!!!!!!all channels are in use!!!!!!!!!!'
-        self.empty_channels_count += curr_empty_channels
+        #self.empty_channels_count += curr_empty_channels
 
 
 
@@ -378,6 +379,7 @@ class Channel(object):
             self.conf['flash_config']['t_PROG']
         self.erase_time = 5 * self.conf['flash_config']['t_WC'] + \
             self.conf['flash_config']['t_BERS']
+
 
     def write_page(self, addr = None , data = None):
         """
@@ -475,7 +477,8 @@ class Channel3(Channel2):
         with self.resource.request() as request:
             yield request
             s = self.env.now
-            yield self.env.timeout( self.program_time )
+            # to reduce simulation time
+            yield self.env.timeout( (self.program_time)/10000 )
             e = self.env.now
             self.recorder.add_to_timer(
                 self.counter_set_name(),
@@ -494,7 +497,8 @@ class Channel3(Channel2):
         with self.resource.request() as request:
             yield request
             s = self.env.now
-            yield self.env.timeout( self.read_time )
+            # to reduce simulation time
+            yield self.env.timeout( (self.read_time)/10000 )
             e = self.env.now
             self.recorder.add_to_timer(
                 self.counter_set_name(),
@@ -508,7 +512,8 @@ class Channel3(Channel2):
         with self.resource.request() as request:
             yield request
             s = self.env.now
-            yield self.env.timeout( self.erase_time )
+            # to reduce simulation time
+            yield self.env.timeout( (self.erase_time)/10000 )
             e = self.env.now
             self.recorder.add_to_timer(
                 self.counter_set_name(),

@@ -74,6 +74,7 @@ DATA_CLEANING = "data.cleaning"
 
 DEBUG_KAN = False
 PRINT_KAN = False
+DEBUG_TRACE_MAPPING = False
 
 class Helper_kan(object):
     def add_config(self, Ftl):
@@ -264,7 +265,8 @@ class Ftl(object):
         self.display_interval = 4 * MB
    
         # Kan: for tracing
-        helper_kan.add_config(self)
+        if DEBUG_TRACE_MAPPING:
+            helper_kan.add_config(self)
 
     def _check_segment_config(self):
         if self.conf['segment_bytes'] % (self.conf.n_pages_per_block \
@@ -292,8 +294,10 @@ class Ftl(object):
             # Kan
             if DEBUG_KAN: 
                 print '      seg_id:', seg_id, '(', seg_ext.lpn_start, ',', seg_ext.lpn_start+seg_ext.lpn_count-1, ')'
-            #helper_kan.channels_add(helper_kan.get_channel_num(ppns[0]), helper_kan.get_inchannel_ppn(ppns[0]), seg_ext.lpn_count)
-            helper_kan.channels_add(ppns)
+            if DEBUG_TRACE_MAPPING:
+                #helper_kan.channels_add(helper_kan.get_channel_num(ppns[0]), helper_kan.get_inchannel_ppn(ppns[0]), seg_ext.lpn_count)
+                helper_kan.channels_add(ppns)
+            
             mapping.update( dict(zip(seg_ext.lpn_iter(), ppns)) )
         return mapping
 
@@ -522,7 +526,8 @@ class Ftl(object):
         ratios = victim_blocks.get_valid_ratio_counter_of_used_blocks()
         self.recorder.append_to_value_list('ftl_func_valid_ratios',
                 ratios)
-        helper_kan.print_channels()
+        if DEBUG_TRACE_MAPPING:
+            helper_kan.print_channels()
 
     def snapshot_user_traffic(self):
         # write down last time written/read bytes
@@ -531,7 +536,7 @@ class Ftl(object):
         if self.read_bytes == 0:
             self.last_read = 0
         
-        # stats for average empty channels
+        # Kan: stats for average empty channels
         if self.flash.request_count == 0:
             average_empty_channels = self.flash.n_channels_per_dev
         else:
@@ -552,7 +557,7 @@ class Ftl(object):
         self.last_written = self.written_bytes
         self.last_read = self.read_bytes
 
-        # reset numbers for empty channels
+        # Kan: reset numbers for empty channels
         self.flash.empty_channels_count = 0
         self.flash.request_count = 0
 
@@ -2023,10 +2028,11 @@ class OutOfBandAreas(object):
 
     def invalidate_ppn(self, ppn):
         # Kan
-        to_invalidate_block, to_invalidate_block_off = helper_kan.ppn_to_block(helper_kan.get_inchannel_ppn(ppn))
-        if DEBUG_KAN:
-            print '=== invalidate (', helper_kan.get_channel_num(ppn), ',', to_invalidate_block,',', to_invalidate_block_off, ',', helper_kan.get_inchannel_ppn(ppn), ')'
-        helper_kan.channels_del(helper_kan.get_channel_num(ppn), [helper_kan.get_inchannel_ppn(ppn)])
+        if DEBUG_TRACE_MAPPING:
+            to_invalidate_block, to_invalidate_block_off = helper_kan.ppn_to_block(helper_kan.get_inchannel_ppn(ppn))
+            if DEBUG_KAN:
+                print '=== invalidate (', helper_kan.get_channel_num(ppn), ',', to_invalidate_block,',', to_invalidate_block_off, ',', helper_kan.get_inchannel_ppn(ppn), ')'
+            helper_kan.channels_del(helper_kan.get_channel_num(ppn), [helper_kan.get_inchannel_ppn(ppn)])
         
         self.states.invalidate_page(ppn)
         block, _ = self.conf.page_to_block_off(ppn)
