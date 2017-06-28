@@ -9,6 +9,7 @@ import os
 import Queue
 import sys
 import simpy
+import math
 
 import bidict
 
@@ -75,13 +76,22 @@ DATA_CLEANING = "data.cleaning"
 DEBUG_KAN = False
 PRINT_KAN = False
 DEBUG_TRACE_MAPPING = False
+DEBUG_TRACE_CHANNEL_WORKLOAD = True
+
+BLOCK_STRIPE =True
 
 class Helper_kan(object):
     def add_config(self, Ftl):
         self.conf = Ftl.conf   
         self.channels=[[] for i in range(self.conf.n_channels_per_dev)]
         self.channels_delete=[[] for i in range(self.conf.n_channels_per_dev)]
-    
+        # to trace channel workload
+
+    def init_for_workload(self, Ftl):
+        self.conf = Ftl.conf   
+        self.channel_workload_read=[0 for i in range(self.conf.n_channels_per_dev)]
+        self.channel_workload_write=[0 for i in range(self.conf.n_channels_per_dev)]
+
     def get_channel_num(self, ppn):
         return ppn/(self.conf.n_pages_per_block * self.conf.n_blocks_per_channel)
 
@@ -104,8 +114,8 @@ class Helper_kan(object):
                     sys.stdout.write('\n'+str(x))
                     sys.stdout.flush()
                     last_block = x[0]
-
             print '\n!delete: ', self.channels_delete[i], '\n'
+    
     def ppn_to_block(self, ppn):
         return ppn / self.conf.n_pages_per_block, ppn % self.conf.n_pages_per_block
 
@@ -128,6 +138,16 @@ class Helper_kan(object):
         return result
         # return pure devided ppns
 
+    # for trace workload, don't need to know ppns any more
+    def count_to_channels(self, ppns):
+        # pass in pure ppns
+        result = [0 for i in range(self.conf.n_channels_per_dev)]
+        for ppn in ppns:
+            now_channel = self.get_channel_num(ppn)
+            result[now_channel] += 1
+        return result
+        # number of pages written to each channel
+ 
 
     def seperate_to_blocks(self, ppns):
         # passed in should be in channel ppn
@@ -206,6 +226,100 @@ class Helper_kan(object):
             # try to combine the extent
             self.combine_or_insert_delete(channel, block, block_off, count)
 
+
+    ######################### for channels workload trace ######################
+    def channels_workload_write_begin(self, ppns):
+        # seperate to channels
+        writes_to_channels = self.count_to_channels(ppns)
+        # record writes to each channel
+        for i in range(self.conf.n_channels_per_dev):
+            self.channel_workload_write[i]+=writes_to_channels[i]
+     
+
+    def channels_workload_write_finish(self, ppns):
+        # seperate to channels
+        writes_to_channels = self.count_to_channels(ppns)
+        # record writes to each channel
+        for i in range(self.conf.n_channels_per_dev):
+            self.channel_workload_write[i]-=writes_to_channels[i]
+
+    def channels_workload_read_begin(self, ppns):
+        # seperate to channels
+        reads_to_channels = self.count_to_channels(ppns)
+        #print "this read:", reads_to_channels
+        # record reads to each channel
+       
+        tmp = sorted(self.channel_workload_read)
+        
+
+        sum_target = sum(reads_to_channels)
+        
+
+        wait_time = max(self.channel_workload_read)
+        run_time = min(self.channel_workload_read)
+        min_wait_time = run_time     # in theory, min wait time
+
+
+        count_channel=0   # how many channels have read
+
+        for i in range(self.conf.n_channels_per_dev):
+            if reads_to_channels[i]>0:
+                count_channel += 1
+                if self.channel_workload_read[i]<wait_time:
+                    wait_time = self.channel_workload_read[i]
+                self.channel_workload_read[i]+=reads_to_channels[i]
+                if self.channel_workload_read[i] > run_time:
+                    run_time = self.channel_workload_read[i]
+
+        run_time -= wait_time
+       
+
+
+ 
+        # TODO if block level
+        if count_channel == 0:
+            return 0,0,0,0
+        if BLOCK_STRIPE:
+            min_run_time = max([tmp[x]+ sorted(reads_to_channels)[-x-1] for x in range(count_channel)])- min_wait_time
+        else:
+            sum_now = 0
+            index = 0
+            count_min = 1
+            time_now = 0
+        
+            while (sum_now<sum_target and index<len(tmp)-1):
+                time_last = time_now
+                sum_last = sum_now
+                if tmp[index+1]>tmp[index] :
+                    sum_now = sum_last + (index+1) * (tmp[index+1]-tmp[index])
+                    time_now = tmp[index+1]-tmp[0]
+                    count_min = 1
+                else:
+                    count_min += 1
+                index += 1
+
+        
+            if sum_now == sum_target:
+                min_run_time = time_now
+            if sum_now > sum_target:
+                min_run_time = time_last + math.ceil(float(sum_target-sum_last)/(index))
+            if sum_now < sum_target:
+                min_run_time = time_now + math.ceil(float(sum_target-sum_now)/self.conf.n_channels_per_dev)
+
+
+        return wait_time, run_time, min_wait_time, min_run_time    # earliest start time
+
+    def channels_workload_read_finish(self, ppns):
+        # seperate to channels
+        reads_to_channels = self.count_to_channels(ppns)
+        # record reads to each channel
+        for i in range(self.conf.n_channels_per_dev):
+            self.channel_workload_read[i]-=reads_to_channels[i]
+
+
+
+
+
 helper_kan = Helper_kan()
 
 class Ftl(object):
@@ -265,8 +379,12 @@ class Ftl(object):
         self.display_interval = 4 * MB
    
         # Kan: for tracing
+        self.waste = 0
         if DEBUG_TRACE_MAPPING:
             helper_kan.add_config(self)
+
+        if DEBUG_TRACE_CHANNEL_WORKLOAD:
+            helper_kan.init_for_workload(self)
 
     def _check_segment_config(self):
         if self.conf['segment_bytes'] % (self.conf.n_pages_per_block \
@@ -284,6 +402,7 @@ class Ftl(object):
     def get_ppns_to_write(self, ext):
         exts_by_seg = split_ext_by_segment(self.conf.n_pages_per_segment, ext)
         mapping = {}
+        ppns_all = []
         for seg_id, seg_ext in exts_by_seg.items():
             ppns = self.block_pool.next_n_data_pages_to_program_striped(
                     n=10*seg_ext.lpn_count, seg_id=seg_id,
@@ -297,9 +416,11 @@ class Ftl(object):
             if DEBUG_TRACE_MAPPING:
                 #helper_kan.channels_add(helper_kan.get_channel_num(ppns[0]), helper_kan.get_inchannel_ppn(ppns[0]), seg_ext.lpn_count)
                 helper_kan.channels_add(ppns)
-            
+            if DEBUG_TRACE_CHANNEL_WORKLOAD:
+                ppns_all.extend(ppns)
+ 
             mapping.update( dict(zip(seg_ext.lpn_iter(), ppns)) )
-        return mapping
+        return (mapping,ppns_all)
 
     def flush_trans_cache(self):
         yield self.env.process(self._mappings.flush())
@@ -328,7 +449,13 @@ class Ftl(object):
         start_time = self.env.now # <----- start
 
         exts_in_mvpngroup = split_ext_to_mvpngroups(self.conf, extent)
-        new_mappings = self.get_ppns_to_write(extent)
+        # To trace added write workload, return all ppns
+        (new_mappings, ppns_all) = self.get_ppns_to_write(extent)
+
+        # To trace added write workload
+        if DEBUG_TRACE_CHANNEL_WORKLOAD:
+            helper_kan.channels_workload_write_begin(ppns_all)
+        
         #print 'new_mappings: ', new_mappings
         procs = []
         for ext_single_m_vpn in exts_in_mvpngroup:
@@ -339,6 +466,13 @@ class Ftl(object):
             procs.append(p)
 
         yield simpy.events.AllOf(self.env, procs)
+
+
+
+        # delete the write workload
+        if DEBUG_TRACE_CHANNEL_WORKLOAD:
+            helper_kan.channels_workload_write_finish(ppns_all)
+        
 
         write_timeline(self.conf, self.recorder,
             op_id = op_id, op = 'write_ext', arg = extent.lpn_start,
@@ -434,6 +568,7 @@ class Ftl(object):
             sys.stdout.flush()
             self.pre_read_bytes = self.read_bytes
 
+        # Kan: to only generate one group, I changed split_ext_to_mvpngroups
         ext_list = split_ext_to_mvpngroups(self.conf, extent)
         # print [str(x) for x in ext_list]
 
@@ -448,6 +583,8 @@ class Ftl(object):
 
         yield simpy.events.AllOf(self.env, procs)
 
+            
+
         write_timeline(self.conf, self.recorder,
             op_id = op_id, op = 'read_ext', arg = extent.lpn_start,
             start_time = start_time, end_time = self.env.now)
@@ -461,13 +598,37 @@ class Ftl(object):
                     tag=tag))
         ppns_to_read = remove_invalid_ppns(ppns_to_read)
 
+        # Kan: to trace channels' workload
+        if DEBUG_TRACE_CHANNEL_WORKLOAD:
+            #print '=======================READ=========================='
+            # Kan: try to record something
+            #print 'previous: ', helper_kan.channel_workload_read
+            
+            # TODO: don't know how to represent the expect time
+            min_q_depth = min(helper_kan.channel_workload_read)
 
+            (wait_time, run_time, min_wait_time, min_run_time) = helper_kan.channels_workload_read_begin(ppns_to_read)
+            
+            self.waste += wait_time + run_time - min_wait_time - min_run_time
+
+            # earlist should be the channel that is smallest, while there will be page request from this request
+            #print " wait time:", wait_time, " run time:", run_time
+            #print " min wait time:", min_wait_time, " min run time:", min_run_time
+
+            # version 1:
+            #print " theoretical min run time: ", math.ceil(float(len(ppns_to_read))/self.flash.n_channels_per_dev)
+            # version 2: should be some function of current status
+   
         op_id = self.recorder.get_unique_num()
         start_time = self.env.now
 
         yield self.env.process(
             self.flash.rw_ppns(ppns_to_read, 'read',
                 tag=self.recorder.get_tag('read_user', tag)))
+        
+        # delete the read workload
+        if DEBUG_TRACE_CHANNEL_WORKLOAD:
+            helper_kan.channels_workload_read_finish(ppns_to_read)
 
         write_timeline(self.conf, self.recorder,
             op_id=op_id, op='read_user_data', arg=len(ppns_to_read),
@@ -535,6 +696,9 @@ class Ftl(object):
             self.last_written = 0
         if self.read_bytes == 0:
             self.last_read = 0
+
+        if self.waste == 0:
+            self.last_waste = 0
         
         # Kan: stats for average empty channels
         if self.flash.request_count == 0:
@@ -551,11 +715,13 @@ class Ftl(object):
                  'throughput': float(self.written_bytes + self.read_bytes - self.last_written - self.last_read)/(1024*1024)*100,
                  'average_empty_channels': average_empty_channels,
                  'request_count': self.flash.request_count,
-                 },
+                 'waste(page)': self.waste - self.last_waste,
+                },
                 )
 
         self.last_written = self.written_bytes
         self.last_read = self.read_bytes
+        self.last_waste = self.waste
 
         # Kan: reset numbers for empty channels
         self.flash.empty_channels_count = 0
@@ -578,7 +744,13 @@ def split_ext_to_mvpngroups(conf, extent):
     """
     group_extent_list = []
     for i, lpn in enumerate(extent.lpn_iter()):
-        cur_m_vpn = conf.lpn_to_m_vpn(lpn)
+        # Kan: to only generate one group
+        if i == 0:
+            cur_m_vpn = conf.lpn_to_m_vpn(lpn)
+        else:
+            cur_m_vpn = last_m_vpn
+        
+        # cur_m_vpn = conf.lpn_to_m_vpn(lpn)
         if i == 0:
             # intialization
             cur_group_extent = Extent(lpn_start = extent.lpn_start,

@@ -278,7 +278,6 @@ class Ssd(SsdBase):
 
     def _user_traffic_size_snapshot_process(self):
         while self._snapshot_user_traffic is True:
-            print("!!!!!!!!!!!!!!!!!!!get here!!!!!!!!!!!!!");
             self.ftl.snapshot_user_traffic()
             #yield self.env.timeout(0.1*SEC)
             # Kan, slower the traffic to calculate throughput
