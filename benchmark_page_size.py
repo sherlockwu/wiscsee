@@ -51,17 +51,17 @@ def run_exps(page_size_set, n_pages_per_block_set, n_channels_set, cache_coverag
                     	print 'segment_bytes: ', n_segment_bytes, ' MB'
                     	
 			# set the output exp name
-                    	exp_name = 'sort_2_14_segment_' + str(n_segment_bytes) + '_pagesize_' + str(page_size) + '_pagesperblock_' + str(n_pages_per_block) + '_channels_' + str(n_channels) + '_stripepage_' + str(n_stripe_size)
+                    	exp_name = 'sort_2_20_segment_' + str(n_segment_bytes) + '_pagesize_' + str(page_size) + '_pagesperblock_' + str(n_pages_per_block) + '_channels_' + str(n_channels) + '_stripepage_' + str(n_stripe_size)
                     	print '============================ genearting ' , exp_name
                     	
                     	for cache_coverage in cache_coverage_set:
                         	print 'cache_coverage: ', cache_coverage
-                        	para = experiment.get_shared_nolist_para_dict(exp_name, 256*MB)
+                        	para = experiment.get_shared_nolist_para_dict(exp_name, 8*512*MB)
                         	para.update({
                             	'ftl': "dftldes",
                             	"mkfs_path": "/tmp/results/trace_external_merge_sort/2_20_ratio_16/blkparse-events-for-ftlsim-mkfs.txt",
                             	"ftlsim_path": "/tmp/results/trace_external_merge_sort/2_20_ratio_16/blkparse-events-for-ftlsim.txt",
-                            	'ssd_ncq_depth': 16, # For Queue Depth test
+                            	'ssd_ncq_depth': 32, # For Queue Depth test
                                 'segment_bytes': n_segment_bytes*1024*1024,
                             	'page_size': page_size*1024,
                             	'n_pages_per_block': n_pages_per_block,
@@ -101,15 +101,15 @@ if __name__=='__main__':
     n_pages_per_block_set = [256]
     
     #n_channels_set = [4, 8, 16]
-    n_channels_set = [16]
+    n_channels_set = [2,4,6,8,10,12,14,16]
 
     # cache_coverage_set = [0.01, 0.05, 0.1, 0.5, 1]
     cache_coverage_set = [1]
     
     # n_stripe_size_set = [0.25, 0.5, 1] of block or units of pages
-    n_stripe_size_set = [256]
+    n_stripe_size_set = [1]
 
     # segment_bytes = [2, 16, 64, 128]
-    n_segment_bytes_set = [1024]
+    n_segment_bytes_set = [4*1024]
 
     run_exps(page_size_set, n_pages_per_block_set, n_channels_set, cache_coverage_set, n_stripe_size_set, n_segment_bytes_set)

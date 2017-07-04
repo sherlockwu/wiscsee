@@ -11,7 +11,7 @@ class my_experiment(experiment.Experiment):
 
 if __name__=='__main__':
     # set parameters
-    para = experiment.get_shared_nolist_para_dict("trace_external_merge_sort", 8*512*MB)   # get shared parameters
+    para = experiment.get_shared_nolist_para_dict("trace_external_merge_sort", 128*1024*MB)   # get shared parameters
     para.update({
                             	'ftl': "ftlcounter",
                             	'ssd_ncq_depth': 32, # For Queue Depth test

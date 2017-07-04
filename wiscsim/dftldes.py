@@ -76,9 +76,9 @@ DATA_CLEANING = "data.cleaning"
 DEBUG_KAN = False
 PRINT_KAN = False
 DEBUG_TRACE_MAPPING = False
-DEBUG_TRACE_CHANNEL_WORKLOAD = True
+DEBUG_TRACE_CHANNEL_WORKLOAD = False
 
-BLOCK_STRIPE =True
+BLOCK_STRIPE = False
 
 class Helper_kan(object):
     def add_config(self, Ftl):
@@ -246,7 +246,8 @@ class Helper_kan(object):
     def channels_workload_read_begin(self, ppns):
         # seperate to channels
         reads_to_channels = self.count_to_channels(ppns)
-        #print "this read:", reads_to_channels
+        if PRINT_KAN:
+            print "this read:", reads_to_channels
         # record reads to each channel
        
         tmp = sorted(self.channel_workload_read)
@@ -602,7 +603,8 @@ class Ftl(object):
         if DEBUG_TRACE_CHANNEL_WORKLOAD:
             #print '=======================READ=========================='
             # Kan: try to record something
-            #print 'previous: ', helper_kan.channel_workload_read
+            if PRINT_KAN:
+                print 'previous: ', helper_kan.channel_workload_read
             
             # TODO: don't know how to represent the expect time
             min_q_depth = min(helper_kan.channel_workload_read)
@@ -611,13 +613,14 @@ class Ftl(object):
             
             self.waste += wait_time + run_time - min_wait_time - min_run_time
 
-            # earlist should be the channel that is smallest, while there will be page request from this request
-            #print " wait time:", wait_time, " run time:", run_time
-            #print " min wait time:", min_wait_time, " min run time:", min_run_time
+            if PRINT_KAN:
+                # earlist should be the channel that is smallest, while there will be page request from this request
+                print " wait time:", wait_time, " run time:", run_time
+                print " min wait time:", min_wait_time, " min run time:", min_run_time
 
-            # version 1:
-            #print " theoretical min run time: ", math.ceil(float(len(ppns_to_read))/self.flash.n_channels_per_dev)
-            # version 2: should be some function of current status
+                # version 1:
+                print " theoretical min run time: ", math.ceil(float(len(ppns_to_read))/self.flash.n_channels_per_dev)
+                # version 2: should be some function of current status
    
         op_id = self.recorder.get_unique_num()
         start_time = self.env.now

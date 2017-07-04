@@ -117,8 +117,8 @@ class external_sort_bench(Workload):
         #subprocess.call(cmd, shell=True)
 	app_leveldb = "/users/kanwu/external_sort/code/"
         os.chdir(app_leveldb)
-        cmd = "./merge_sort 16777216 "
-        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!executing ", cmd
+        cmd = "./merge_sort 16777216 16"
+        print "====== executing ", cmd
         subprocess.call(cmd, shell=True)
 
     def stop(self):

@@ -478,7 +478,8 @@ class Channel3(Channel2):
             yield request
             s = self.env.now
             # to reduce simulation time
-            yield self.env.timeout( (self.program_time)/10000 )
+            #yield self.env.timeout( (self.program_time)/10000 )
+            yield self.env.timeout( (self.program_time) )
             e = self.env.now
             self.recorder.add_to_timer(
                 self.counter_set_name(),
@@ -498,7 +499,8 @@ class Channel3(Channel2):
             yield request
             s = self.env.now
             # to reduce simulation time
-            yield self.env.timeout( (self.read_time)/10000 )
+            #yield self.env.timeout( (self.read_time)/10000 )
+            yield self.env.timeout( (self.read_time) )
             e = self.env.now
             self.recorder.add_to_timer(
                 self.counter_set_name(),
@@ -513,7 +515,8 @@ class Channel3(Channel2):
             yield request
             s = self.env.now
             # to reduce simulation time
-            yield self.env.timeout( (self.erase_time)/10000 )
+            #yield self.env.timeout( (self.erase_time)/10000 )
+            yield self.env.timeout( (self.erase_time) )
             e = self.env.now
             self.recorder.add_to_timer(
                 self.counter_set_name(),
