@@ -56,18 +56,18 @@ def run_exps(page_size_set, n_pages_per_block_set, n_channels_set, cache_coverag
                     	
                     	for cache_coverage in cache_coverage_set:
                         	print 'cache_coverage: ', cache_coverage
-                        	para = experiment.get_shared_nolist_para_dict(exp_name, 8*512*MB)
+                        	para = experiment.get_shared_nolist_para_dict(exp_name, 128*MB)
                         	para.update({
                             	'ftl': "dftldes",
-                            	"mkfs_path": "/tmp/results/trace_external_merge_sort/2_20_ratio_16/blkparse-events-for-ftlsim-mkfs.txt",
-                            	"ftlsim_path": "/tmp/results/trace_external_merge_sort/2_20_ratio_16/blkparse-events-for-ftlsim.txt",
+                            	"mkfs_path": "/tmp/results/trace_external_merge_sort/now/blkparse-events-for-ftlsim-mkfs.txt",
+                            	"ftlsim_path": "/tmp/results/trace_external_merge_sort/now/blkparse-events-for-ftlsim.txt",
                             	'ssd_ncq_depth': 32, # For Queue Depth test
                                 'segment_bytes': n_segment_bytes*1024*1024,
                             	'page_size': page_size*1024,
                             	'n_pages_per_block': n_pages_per_block,
                             	'n_channels_per_dev': n_channels,
                             	'stripe_size': int(n_stripe_size),
-                            	'cache_mapped_data_bytes': int(8589934592*cache_coverage),
+                            	'cache_mapped_data_bytes': int(134217728*cache_coverage),
                         	})
                         # For counter:
                         #run_exps_counter(para)
@@ -101,7 +101,7 @@ if __name__=='__main__':
     n_pages_per_block_set = [256]
     
     #n_channels_set = [4, 8, 16]
-    n_channels_set = [2,4,6,8,10,12,14,16]
+    n_channels_set = [16]
 
     # cache_coverage_set = [0.01, 0.05, 0.1, 0.5, 1]
     cache_coverage_set = [1]
@@ -110,6 +110,6 @@ if __name__=='__main__':
     n_stripe_size_set = [1]
 
     # segment_bytes = [2, 16, 64, 128]
-    n_segment_bytes_set = [4*1024]
+    n_segment_bytes_set = [128]
 
     run_exps(page_size_set, n_pages_per_block_set, n_channels_set, cache_coverage_set, n_stripe_size_set, n_segment_bytes_set)

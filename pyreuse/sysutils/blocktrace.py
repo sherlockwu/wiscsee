@@ -123,6 +123,9 @@ class BlktraceResultInMem(object):
         # blktrace address - 8MB = event address
         self.padding_bytes = padding_bytes
 
+        # Kan: to compare file request and block requests
+        print '======== sector size:', self.sector_size, 'padding bytes:', self.padding_bytes, ' ========'
+
         self.__parse_rawfile()
 
     def __line_to_dic(self, line):
