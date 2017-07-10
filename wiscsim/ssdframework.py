@@ -89,10 +89,21 @@ class Ssd(SsdBase):
         for req_i in itertools.count():
             host_event = yield self.ncq.queue.get()
             # Kan, tracing the event
+            print req_i, pid, host_event
 
             slot_req = self.ncq.slots.request()
             yield slot_req
-            print host_event, pid
+            print '=======\nget on ncq: ', host_event
+
+
+            # Kan: handle dependency here
+                # barrier
+
+                # dependency      same with barrier? but just need to wait specific requests end
+
+
+
+
 
             # handle host_event case by case
             operation = host_event.get_operation()
@@ -107,10 +118,13 @@ class Ssd(SsdBase):
                 pass
 
             elif operation == OP_SHUT_SSD:
-                print 'got shut_ssd'
                 sys.stdout.flush()
                 yield self.env.process(self._end_all_processes())
-
+            
+            ######################### Kan: for dependency #######################
+            elif operation == 'BARRIER':
+                print '\n\n\n\n\n\n\n\nget barrier from Kan\n\n\n\n\n\n\n\n\n\n\n'
+            
             elif operation == OP_BARRIER:
                 # The correct way of doing barrier is to use
                 # OP_BARRIER with more than n_ncq_slots OP_NOOP.

@@ -418,12 +418,10 @@ class Ftl(object):
         ppns_all = []
         for seg_id, seg_ext in exts_by_seg.items():
             ppns = self.block_pool.next_n_data_pages_to_program_striped(
-                    n=10*seg_ext.lpn_count, seg_id=seg_id,
+                    n=seg_ext.lpn_count, seg_id=seg_id,
                     choice=LEAST_ERASED)
-            #ppns = self.block_pool.next_n_data_pages_to_program_striped(
-            #        n=seg_ext.lpn_count, seg_id=seg_id,
-            #        choice=LEAST_ERASED)
-            # Kan
+
+            #Kan:
             if DEBUG_KAN: 
                 print '      seg_id:', seg_id, '(', seg_ext.lpn_start, ',', seg_ext.lpn_start+seg_ext.lpn_count-1, ')'
             if DEBUG_TRACE_MAPPING:
@@ -589,7 +587,10 @@ class Ftl(object):
         start_time = self.env.now
 
         procs = []
+        print '========='
+        print 'stats: ', req_size
         for ext_single_m_vpn in ext_list:
+            print 'ext_single_mi_vpn: ', ext_single_m_vpn
             p = self.env.process(
                     self._read_single_mvpngroup(ext_single_m_vpn, tag=op_id))
             procs.append(p)
@@ -609,15 +610,15 @@ class Ftl(object):
         ppns_to_read = yield self.env.process(
                 self._mappings.lpns_to_ppns(ext_single_m_vpn.lpn_iter(),
                     tag=tag))
+        print '      to read: ', len(ppns_to_read)
         ppns_to_read = remove_invalid_ppns(ppns_to_read)
+        print '      after remove invalid: ', len(ppns_to_read), ppns_to_read
 
         # Kan: to trace channels' workload
         if DEBUG_TRACE_CHANNEL_WORKLOAD:
             #print '=======================READ=========================='
             # Kan: try to record something
             
-            min_q_depth = min(helper_kan.channel_workload_read)
-
             (wait_time, run_time, min_wait_time, min_run_time) = helper_kan.channels_workload_read_begin(ppns_to_read)
             
             self.waste += wait_time + run_time - min_wait_time - min_run_time

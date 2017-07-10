@@ -95,13 +95,16 @@ class EventIterator(object):
         self.filelineiter = filelineiter
         self.event_file_column_names = self.conf['event_file_column_names']
 
-        self._translation = {'read': OP_READ, 'write': OP_WRITE,
+        #self._translation = {'read': OP_READ, 'write': OP_WRITE,
+        #        'discard':OP_DISCARD}
+        self._translation = {'barrier': 'BARRIER', 'read': OP_READ, 'write': OP_WRITE,
                 'discard':OP_DISCARD}
 
     def _convert(self, op_in_file):
         return self._translation[op_in_file]
 
     def str_to_event(self, line):
+        print 'get here to translate: ', line
         items = line.split()
         if len(self.event_file_column_names) != len(items):
             raise RuntimeError("Lengths not equal: {} {}".format(
