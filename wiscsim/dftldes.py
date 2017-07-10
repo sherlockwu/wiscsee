@@ -74,9 +74,9 @@ DATA_CLEANING = "data.cleaning"
 #Kan
 
 DEBUG_KAN = False
-PRINT_KAN = False
+PRINT_KAN = True 
 DEBUG_TRACE_MAPPING = False
-DEBUG_TRACE_CHANNEL_WORKLOAD = False
+DEBUG_TRACE_CHANNEL_WORKLOAD = True
 
 BLOCK_STRIPE = False
 
@@ -231,9 +231,14 @@ class Helper_kan(object):
     def channels_workload_write_begin(self, ppns):
         # seperate to channels
         writes_to_channels = self.count_to_channels(ppns)
+        if PRINT_KAN:
+            print '======\nprevious: ', self.channel_workload_read             # we will use uniform dump status for read and write, but write's cost is 10x
+            print "this write(", len(ppns), '):', writes_to_channels
+        
         # record writes to each channel
         for i in range(self.conf.n_channels_per_dev):
-            self.channel_workload_write[i]+=writes_to_channels[i]
+            if writes_to_channels[i]>0:
+                self.channel_workload_read[i]+=writes_to_channels[i]*10
      
 
     def channels_workload_write_finish(self, ppns):
@@ -241,13 +246,17 @@ class Helper_kan(object):
         writes_to_channels = self.count_to_channels(ppns)
         # record writes to each channel
         for i in range(self.conf.n_channels_per_dev):
-            self.channel_workload_write[i]-=writes_to_channels[i]
+            #self.channel_workload_write[i]-=writes_to_channels[i]
+            self.channel_workload_read[i]-=writes_to_channels[i]*10
 
     def channels_workload_read_begin(self, ppns):
+        if len(ppns) == 0:
+            return 0,0,0,0
         # seperate to channels
         reads_to_channels = self.count_to_channels(ppns)
         if PRINT_KAN:
-            print "this read:", reads_to_channels
+            print '======\nprevious: ', self.channel_workload_read
+            print "this read(", len(ppns), '):', reads_to_channels
         # record reads to each channel
        
         tmp = sorted(self.channel_workload_read)
@@ -266,9 +275,12 @@ class Helper_kan(object):
         for i in range(self.conf.n_channels_per_dev):
             if reads_to_channels[i]>0:
                 count_channel += 1
+                # count previous
                 if self.channel_workload_read[i]<wait_time:
                     wait_time = self.channel_workload_read[i]
+                # add this read
                 self.channel_workload_read[i]+=reads_to_channels[i]
+                # count after
                 if self.channel_workload_read[i] > run_time:
                     run_time = self.channel_workload_read[i]
 
@@ -603,17 +615,14 @@ class Ftl(object):
         if DEBUG_TRACE_CHANNEL_WORKLOAD:
             #print '=======================READ=========================='
             # Kan: try to record something
-            if PRINT_KAN:
-                print 'previous: ', helper_kan.channel_workload_read
             
-            # TODO: don't know how to represent the expect time
             min_q_depth = min(helper_kan.channel_workload_read)
 
             (wait_time, run_time, min_wait_time, min_run_time) = helper_kan.channels_workload_read_begin(ppns_to_read)
             
             self.waste += wait_time + run_time - min_wait_time - min_run_time
 
-            if PRINT_KAN:
+            if PRINT_KAN and wait_time!=0 :
                 # earlist should be the channel that is smallest, while there will be page request from this request
                 print " wait time:", wait_time, " run time:", run_time
                 print " min wait time:", min_wait_time, " min run time:", min_run_time

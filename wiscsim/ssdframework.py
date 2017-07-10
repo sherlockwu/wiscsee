@@ -89,10 +89,10 @@ class Ssd(SsdBase):
         for req_i in itertools.count():
             host_event = yield self.ncq.queue.get()
             # Kan, tracing the event
-            print host_event, pid
 
             slot_req = self.ncq.slots.request()
             yield slot_req
+            print host_event, pid
 
             # handle host_event case by case
             operation = host_event.get_operation()
