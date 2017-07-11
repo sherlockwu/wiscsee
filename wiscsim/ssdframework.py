@@ -69,7 +69,8 @@ class Ssd(SsdBase):
 
         # dependency
         self.dependency_lock = simpy.Resource(simpy_env, capacity=1)
-        self.tags = []
+        self.tag_lock = simpy.Resource(simpy_env, capacity=1)
+        self.tags = {}
         self.handling_requests = simpy.Container(simpy_env, self.ncq.ncq_depth, 0)
 
     def _create_ftl(self):
@@ -98,28 +99,41 @@ class Ssd(SsdBase):
     def _process(self, pid):
         for req_i in itertools.count():
             host_event = yield self.ncq.queue.get()
-
+             
             # Kan: handle dependency here
                 # judge whether we can handle this request
+            tag = -1
+            op_index = -1
             with self.dependency_lock.request() as d_lock:
                 yield d_lock
-                print pid, host_event
-                # barrier
-            
+                print '======next:', pid, host_event
+                # barrier 
                 if host_event.get_operation() == 'BARRIER':
                     print '\n\n\n\n\n\n\n\nget barrier from Kan\n'
                     #while self.handling_requests > 0:
                     while self.handling_requests.level>0:
                          yield self.env.timeout(50*self.handling_requests.level)
                     print '!!!!!!!!!!!!!!!!!! get back !!!!!!!!!!!!!!!!!'
+                
+                # for dependency
+                tag, op_index = host_event.get_tags()
+                if str(tag) != str('-1'):
+                    print 'has dependency: ', tag, op_index
+                    print 'previous tags: ', self.tags
+                    # judge whether need to wait
+                    #while self.tags.has_key(str(tag)) and self.tags[str(tag)]!=op_index:
+                    #    yield self.env.timeout(50)
+                    
+                    with self.tag_lock.request() as t_lock:
+                        yield t_lock
+                        self.tags[str(tag)] = op_index
 
 
             slot_req = self.ncq.slots.request()
             yield slot_req
-            print '=======\nget on ncq: ', host_event
          
             # for dependency
-            self.handling_requests.put(1)
+            yield self.handling_requests.put(1)
             print 'handling: ', self.handling_requests.level
 
 
@@ -279,8 +293,14 @@ class Ssd(SsdBase):
             self.ncq.slots.release(slot_req)
             
             # for dependency
-            self.handling_requests.get(1)
+            yield self.handling_requests.get(1)
             print 'finished one: ', self.handling_requests.level
+            # for tag
+            print tag, op_index
+            if str(tag)!= str('-1'):
+                with self.tag_lock.request() as t_lock:
+                    yield t_lock
+                    del self.tags[str(tag)]
             
 
     def _end_all_processes(self):

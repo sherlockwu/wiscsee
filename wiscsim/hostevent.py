@@ -16,6 +16,10 @@ class ControlEvent(HostEventBase):
         self.arg2 = arg2
         self.arg3 = arg3
         self.action = 'D' # following the format of data event
+    
+    # for dependency
+    def get_tags(self):
+        return -1, -1
 
     def get_operation(self):
         return self.operation
@@ -29,8 +33,12 @@ class ControlEvent(HostEventBase):
 
 
 class Event(HostEventBase):
+    #def __init__(self, sector_size, pid, operation, offset, size,
+    #        timestamp = None, pre_wait_time = None, sync = True, action = 'D'):
+
+    # for dependency
     def __init__(self, sector_size, pid, operation, offset, size,
-            timestamp = None, pre_wait_time = None, sync = True, action = 'D'):
+            timestamp = None, pre_wait_time = None, sync = True, action = 'D', tag = '-1', op_index='-1'):
         self.pid = int(pid)
         self.operation = operation
         self.offset = int(offset)
@@ -39,6 +47,11 @@ class Event(HostEventBase):
         self.timestamp = timestamp
         self.pre_wait_time = pre_wait_time
         self.action = action
+
+        # for dependency
+        self.tag = tag
+        self.op_index = op_index
+
         assert action in ('D', 'C'), "action:{}".format(action)
 
         assert self.offset % sector_size == 0,\
@@ -51,6 +64,10 @@ class Event(HostEventBase):
             self.size, sector_size)
 
         self.sector_count = self.size / sector_size
+
+    # for dependency
+    def get_tags(self):
+        return self.tag, self.op_index
 
     def get_operation(self):
         return self.operation
@@ -95,6 +112,7 @@ class EventIterator(object):
         self.filelineiter = filelineiter
         self.event_file_column_names = self.conf['event_file_column_names']
 
+        #Kan: for dependency
         #self._translation = {'read': OP_READ, 'write': OP_WRITE,
         #        'discard':OP_DISCARD}
         self._translation = {'barrier': 'BARRIER', 'read': OP_READ, 'write': OP_WRITE,
@@ -104,17 +122,25 @@ class EventIterator(object):
         return self._translation[op_in_file]
 
     def str_to_event(self, line):
-        print 'get here to translate: ', line
         items = line.split()
-        if len(self.event_file_column_names) != len(items):
-            raise RuntimeError("Lengths not equal: {} {}".format(
-                self.event_file_column_names, items))
+        #if len(self.event_file_column_names) != len(items):
+        #    raise RuntimeError("Lengths not equal: {} {}".format(
+        #        self.event_file_column_names, items))
         dic = dict(zip(self.event_file_column_names, items))
         dic['sector_size'] = self.sector_size
         if dic['pre_wait_time'] != 'NA':
             dic['pre_wait_time'] = float(dic['pre_wait_time'])
 
         dic['operation'] = self._convert(dic['operation'])
+        
+        if len(self.event_file_column_names)+2 == len(items):
+            print '\n\n\n\n\n\n\n', dic
+            dic['tag'] = str(items[-1])
+            dic['op_index'] = str(items[-2])
+            print dic, '\n\n\n\n\n'
+        else:
+            dic['tag'] = '-1'
+            dic['op_index'] = '-1'
 
         return Event(**dic)
 
