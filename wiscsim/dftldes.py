@@ -445,6 +445,7 @@ class Ftl(object):
 
     def write_ext(self, extent):
         req_size = extent.lpn_count * self.conf.page_size
+        print 'get in write_ext'
         if DEBUG_KAN:
             print '=== writing ', "{0:.2f}".format(float(extent.lpn_count)/self.conf.n_pages_per_block), 'block'
         

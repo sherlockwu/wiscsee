@@ -27,6 +27,11 @@ import nkftl2
 
 from pyreuse.sysutils import blocktrace, blockclassifiers, dumpe2fsparser
 
+# For dependency:
+import threading
+import time
+
+
 class SsdBase(object):
     def _process(self, pid):
         raise NotImplementedError()
@@ -62,6 +67,11 @@ class Ssd(SsdBase):
         self.gc_sleep_timer = 0
         self.gc_sleep_duration = 10
 
+        # dependency
+        self.dependency_lock = simpy.Resource(simpy_env, capacity=1)
+        self.tags = []
+        self.handling_requests = simpy.Container(simpy_env, self.ncq.ncq_depth, 0)
+
     def _create_ftl(self):
         if self.conf['ftl_type'] == 'dftldes':
             return dftldes.Ftl(self.conf, self.recorder, self.flash_controller,
@@ -88,21 +98,29 @@ class Ssd(SsdBase):
     def _process(self, pid):
         for req_i in itertools.count():
             host_event = yield self.ncq.queue.get()
-            # Kan, tracing the event
-            print req_i, pid, host_event
+
+            # Kan: handle dependency here
+                # judge whether we can handle this request
+            with self.dependency_lock.request() as d_lock:
+                yield d_lock
+                print pid, host_event
+                # barrier
+            
+                if host_event.get_operation() == 'BARRIER':
+                    print '\n\n\n\n\n\n\n\nget barrier from Kan\n'
+                    #while self.handling_requests > 0:
+                    while self.handling_requests.level>0:
+                         yield self.env.timeout(50*self.handling_requests.level)
+                    print '!!!!!!!!!!!!!!!!!! get back !!!!!!!!!!!!!!!!!'
+
 
             slot_req = self.ncq.slots.request()
             yield slot_req
             print '=======\nget on ncq: ', host_event
-
-
-            # Kan: handle dependency here
-                # barrier
-
-                # dependency      same with barrier? but just need to wait specific requests end
-
-
-
+         
+            # for dependency
+            self.handling_requests.put(1)
+            print 'handling: ', self.handling_requests.level
 
 
             # handle host_event case by case
@@ -123,8 +141,8 @@ class Ssd(SsdBase):
             
             ######################### Kan: for dependency #######################
             elif operation == 'BARRIER':
-                print '\n\n\n\n\n\n\n\nget barrier from Kan\n\n\n\n\n\n\n\n\n\n\n'
-            
+                # dependency      same with barrier? but just need to wait specific requests end
+                pass 
             elif operation == OP_BARRIER:
                 # The correct way of doing barrier is to use
                 # OP_BARRIER with more than n_ncq_slots OP_NOOP.
@@ -242,6 +260,7 @@ class Ssd(SsdBase):
                 raise NotImplementedError("Operation {} not supported."\
                         .format(host_event.operation))
 
+
             if req_i % 1000 == 0:
                 print '.',
                 sys.stdout.flush()
@@ -258,6 +277,11 @@ class Ssd(SsdBase):
                 self.gc_sleep_timer = self.gc_sleep_duration
 
             self.ncq.slots.release(slot_req)
+            
+            # for dependency
+            self.handling_requests.get(1)
+            print 'finished one: ', self.handling_requests.level
+            
 
     def _end_all_processes(self):
         for i in range(self.n_processes):
