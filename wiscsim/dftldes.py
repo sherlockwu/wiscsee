@@ -74,7 +74,7 @@ DATA_CLEANING = "data.cleaning"
 #Kan
 
 DEBUG_KAN = False
-PRINT_KAN = False 
+PRINT_KAN = True 
 DEBUG_TRACE_MAPPING = False
 DEBUG_TRACE_CHANNEL_WORKLOAD = True
 
@@ -445,7 +445,6 @@ class Ftl(object):
 
     def write_ext(self, extent):
         req_size = extent.lpn_count * self.conf.page_size
-        print 'get in write_ext'
         if DEBUG_KAN:
             print '=== writing ', "{0:.2f}".format(float(extent.lpn_count)/self.conf.n_pages_per_block), 'block'
         
@@ -588,10 +587,7 @@ class Ftl(object):
         start_time = self.env.now
 
         procs = []
-        print '========='
-        print 'stats: ', req_size
         for ext_single_m_vpn in ext_list:
-            print 'ext_single_mi_vpn: ', ext_single_m_vpn
             p = self.env.process(
                     self._read_single_mvpngroup(ext_single_m_vpn, tag=op_id))
             procs.append(p)
@@ -611,9 +607,7 @@ class Ftl(object):
         ppns_to_read = yield self.env.process(
                 self._mappings.lpns_to_ppns(ext_single_m_vpn.lpn_iter(),
                     tag=tag))
-        print '      to read: ', len(ppns_to_read)
         ppns_to_read = remove_invalid_ppns(ppns_to_read)
-        print '      after remove invalid: ', len(ppns_to_read), ppns_to_read
 
         # Kan: to trace channels' workload
         if DEBUG_TRACE_CHANNEL_WORKLOAD:

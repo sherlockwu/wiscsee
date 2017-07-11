@@ -38,7 +38,7 @@ class Event(HostEventBase):
 
     # for dependency
     def __init__(self, sector_size, pid, operation, offset, size,
-            timestamp = None, pre_wait_time = None, sync = True, action = 'D', tag = '-1', op_index='-1'):
+            timestamp = None, pre_wait_time = None, sync = True, action = 'D', tag = -1, op_index=-1):
         self.pid = int(pid)
         self.operation = operation
         self.offset = int(offset)
@@ -134,13 +134,11 @@ class EventIterator(object):
         dic['operation'] = self._convert(dic['operation'])
         
         if len(self.event_file_column_names)+2 == len(items):
-            print '\n\n\n\n\n\n\n', dic
             dic['tag'] = str(items[-1])
             dic['op_index'] = str(items[-2])
-            print dic, '\n\n\n\n\n'
         else:
-            dic['tag'] = '-1'
-            dic['op_index'] = '-1'
+            dic['tag'] = -1
+            dic['op_index'] = -1
 
         return Event(**dic)
 
