@@ -134,9 +134,9 @@ class Ssd(SsdBase):
                             flag = True
                     while self.tags.has_key(tag) and self.tags[tag][0]!=op_index:
                         yield self.env.timeout(500)      # may change
-                    if DEBUG_DEPENDENCY:
-                        if flag:
-                            print '\n======DEPENDENCY FROM APPLICATION======\n'
+                    #if DEBUG_DEPENDENCY:
+                        #if flag:
+                        #    print '\n======DEPENDENCY FROM APPLICATION======\n'
                     with self.tag_lock.request() as t_lock:
                         yield t_lock
                         if not self.tags.has_key(tag):

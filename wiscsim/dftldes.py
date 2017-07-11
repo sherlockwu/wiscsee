@@ -74,7 +74,7 @@ DATA_CLEANING = "data.cleaning"
 #Kan
 
 DEBUG_KAN = False
-PRINT_KAN = True 
+PRINT_KAN = False 
 DEBUG_TRACE_MAPPING = False
 DEBUG_TRACE_CHANNEL_WORKLOAD = True
 
@@ -235,11 +235,23 @@ class Helper_kan(object):
             print '======\nprevious: ', self.channel_workload_read             # we will use uniform dump status for read and write, but write's cost is 10x
             print "this write(", len(ppns), '):', writes_to_channels
         
+        #last request end time
+        last_end_time = max(self.channel_workload_read)
+        cur_end_time = min(self.channel_workload_read)
+
         # record writes to each channel
         for i in range(self.conf.n_channels_per_dev):
             if writes_to_channels[i]>0:
                 self.channel_workload_read[i]+=writes_to_channels[i]*10
-     
+                if self.channel_workload_read[i]>cur_end_time:
+                    cur_end_time = self.channel_workload_read[i]
+
+        # this request took time:
+        time_take = cur_end_time - last_end_time
+        if time_take<0:
+            time_take = 0
+        return time_take
+        
 
     def channels_workload_write_finish(self, ppns):
         # seperate to channels
@@ -258,7 +270,7 @@ class Helper_kan(object):
             print '======\nprevious: ', self.channel_workload_read
             print "this read(", len(ppns), '):', reads_to_channels
         # record reads to each channel
-       
+        
         tmp = sorted(self.channel_workload_read)
         
 
@@ -284,10 +296,13 @@ class Helper_kan(object):
                 if self.channel_workload_read[i] > run_time:
                     run_time = self.channel_workload_read[i]
 
+        # run time since last request finish
+        run_time_since_last = run_time - max(tmp) 
+        if run_time_since_last<0:
+            run_time_since_last = 0
+        # real working time
         run_time -= wait_time
-       
-
-
+        
  
         # TODO if block level
         if count_channel == 0:
@@ -320,7 +335,8 @@ class Helper_kan(object):
                 min_run_time = time_now + math.ceil(float(sum_target-sum_now)/self.conf.n_channels_per_dev)
 
 
-        return wait_time, run_time, min_wait_time, min_run_time    # earliest start time
+        #return wait_time, run_time, min_wait_time, min_run_time    # earliest start time
+        return wait_time, run_time_since_last, min_wait_time, min_run_time    # earliest start time
 
     def channels_workload_read_finish(self, ppns):
         # seperate to channels
@@ -465,7 +481,8 @@ class Ftl(object):
 
         # To trace added write workload
         if DEBUG_TRACE_CHANNEL_WORKLOAD:
-            helper_kan.channels_workload_write_begin(ppns_all)
+            time_will_take = helper_kan.channels_workload_write_begin(ppns_all)
+            print ' write', len(ppns_all),  time_will_take
         
         #print 'new_mappings: ', new_mappings
         procs = []
@@ -618,13 +635,15 @@ class Ftl(object):
             
             self.waste += wait_time + run_time - min_wait_time - min_run_time
 
-            if PRINT_KAN and wait_time!=0 :
+            print ' read', len(ppns_to_read), run_time
+            if PRINT_KAN:
                 # earlist should be the channel that is smallest, while there will be page request from this request
-                print " wait time:", wait_time, " run time:", run_time
-                print " min wait time:", min_wait_time, " min run time:", min_run_time
+                #print " wait time:", wait_time, " run time:", run_time
+                print " read run time:", run_time
+                #print " min wait time:", min_wait_time, " min run time:", min_run_time
 
                 # version 1:
-                print " theoretical min run time: ", math.ceil(float(len(ppns_to_read))/self.flash.n_channels_per_dev)
+                #print " theoretical min run time: ", math.ceil(float(len(ppns_to_read))/self.flash.n_channels_per_dev)
                 # version 2: should be some function of current status
    
         op_id = self.recorder.get_unique_num()

@@ -101,13 +101,13 @@ if __name__=='__main__':
     n_pages_per_block_set = [256]
     
     #n_channels_set = [4, 8, 16]
-    n_channels_set = [16]
+    n_channels_set = [14]
 
     # cache_coverage_set = [0.01, 0.05, 0.1, 0.5, 1]
     cache_coverage_set = [1]
     
     # n_stripe_size_set = [0.25, 0.5, 1] of block or units of pages
-    n_stripe_size_set = [1]
+    n_stripe_size_set = [16]
 
     # segment_bytes = [2, 16, 64, 128]
     n_segment_bytes_set = [128]
