@@ -74,7 +74,7 @@ DATA_CLEANING = "data.cleaning"
 #Kan
 
 DEBUG_KAN = False
-PRINT_KAN = False 
+PRINT_KAN = True 
 DEBUG_TRACE_MAPPING = False
 DEBUG_TRACE_CHANNEL_WORKLOAD = True
 

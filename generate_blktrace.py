@@ -11,7 +11,7 @@ class my_experiment(experiment.Experiment):
 
 if __name__=='__main__':
     # set parameters
-    para = experiment.get_shared_nolist_para_dict("trace_external_merge_sort", 128*MB)   # get shared parameters
+    para = experiment.get_shared_nolist_para_dict("trace_external_merge_sort", 128*GB)   # get shared parameters
     para.update({
                             	'ftl': "ftlcounter",
                             	'ssd_ncq_depth': 32, # For Queue Depth test
@@ -25,7 +25,7 @@ if __name__=='__main__':
                                 'only_get_traffic': False,
     })
     para['device_path'] = "/dev/sdc1"
-    para['filesystem'] = "f2fs"
+    para['filesystem'] = "ext4"
     #para['ftl'] = "ftlcounter" # for see ncq_depth
     para['enable_simulation'] = True
     para['do_ncq_depth_time_line'] = True
