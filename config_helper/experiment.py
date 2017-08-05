@@ -26,6 +26,9 @@ class Experiment(object):
         self.conf['exp_parameters'] = self.para._asdict()
 
     def setup_environment(self):
+        # Kan: dependency
+        self.conf['dependency_knowledge_path'] = self.para.dependency_knowledge_path
+        
         self.conf['device_path'] = self.para.device_path
         self.conf['dev_size_mb'] = self.para.lbabytes / MB
         self.conf["n_online_cpus"] = self.para.n_online_cpus

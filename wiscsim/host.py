@@ -1,7 +1,8 @@
 from commons import *
 from ftlsim_commons import *
 import hostevent
-
+# Kan: dependency_aware
+import dependency
 
 class Host(object):
     def __init__(self, conf, simpy_env, event_iter):
@@ -14,10 +15,16 @@ class Host(object):
                 ncq_depth = self.conf['SSDFramework']['ncq_depth'],
                 simpy_env = self.env)
 
+        # init the dependency graph
+        print "\n\n\n=============\n", self.conf['dependency_knowledge_path'], "\n============\n\n\n"
+        dependency.init(self.conf['dependency_knowledge_path'])
+
     def get_ncq(self):
         return self._ncq
 
     def _process(self):
+        # Kan: dependency-aware to distribute events to ncq TODO
+
         for event in self.event_iter:
             if isinstance(event, hostevent.Event) and event.offset < 0:
                 # due to padding, accesing disk head will be negative.

@@ -24,6 +24,7 @@ import recorder
 from utilities import utils
 import dftldes
 import nkftl2
+import dependency
 
 from pyreuse.sysutils import blocktrace, blockclassifiers, dumpe2fsparser
 
@@ -100,15 +101,18 @@ class Ssd(SsdBase):
         for req in reqs:
             self.ncq.slots.release(req)
 
+
     def _process(self, pid):
         for req_i in itertools.count():
-            host_event = yield self.ncq.queue.get()
+            host_event = yield self.ncq.queue.get()    # Kan: more explanation: the next bio which is able to be distributed
             operation = host_event.get_operation()
              
             # Kan: handle dependency here
                 # judge whether we can handle this request
+            '''
             tag = -1
             op_index = -1
+            
             with self.dependency_lock.request() as d_lock:
                 yield d_lock
                 #if DEBUG_DEPENDENCY:
@@ -124,6 +128,7 @@ class Ssd(SsdBase):
                         print '\n\n\n\n\n\n======BARRIER FROM APPLICATION======\n\n\n\n\n\n'
                 
                 # for tag dependency
+                # TODO!!!!!!!!
                 tag, op_index = host_event.get_tags()  # all int
                 tag = str(tag)
                 if tag != '-1':
@@ -145,12 +150,12 @@ class Ssd(SsdBase):
                             self.tags[tag][1] += 1  # count++
                         #print '!!!!!!!!!!!!!', self.tags
 
-
+            '''
             slot_req = self.ncq.slots.request()
             yield slot_req
          
             # for barrier
-            yield self.handling_requests.put(1)
+            #yield self.handling_requests.put(1)
 
 
             # handle host_event case by case
@@ -307,18 +312,22 @@ class Ssd(SsdBase):
                 self.gc_sleep_timer = self.gc_sleep_duration
 
             self.ncq.slots.release(slot_req)
-            
-            # for barrier
-            yield self.handling_requests.get(1)   # finished one request
+           
+            # Kan: TODO update the graph module
+            dependency.update_node()
+
+            # Kan: for barrier
+            # yield self.handling_requests.get(1)   # finished one request
             # print 'finished one: ', self.handling_requests.level
             # for tag dependency
+            '''
             if tag!= '-1':
                 with self.tag_lock.request() as t_lock:
                     yield t_lock
                     self.tags[tag][1] -= 1
                     if self.tags[tag][1] == 0:
                         del self.tags[tag]
-            
+            '''
 
     def _end_all_processes(self):
         for i in range(self.n_processes):

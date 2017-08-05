@@ -134,6 +134,7 @@ class EventIterator(object):
         dic['operation'] = self._convert(dic['operation'])
         
         if len(self.event_file_column_names)+2 == len(items):
+            # TODO
             dic['tag'] = str(items[-1])
             dic['op_index'] = str(items[-2])
         else:

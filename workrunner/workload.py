@@ -117,6 +117,7 @@ class external_sort_bench(Workload):
         #subprocess.call(cmd, shell=True)
 	app_external_sort = "/users/kanwu/external_sort/code/"
         os.chdir(app_external_sort)
+        #cmd = "./merge_sort 16777216 4"
         cmd = "./merge_sort 65536 4"
         print "====== executing ", cmd
         subprocess.call(cmd, shell=True)
