@@ -1,67 +1,100 @@
-
 from collections import deque
 
+# status constant of nodes
+NOT_ABLE_TO_DISTRIBUTE = 0
+ABLE_TO_DISTRIBUTE = 1
+FINISHED = 2
+
+# label of edge
+
+# Output API
+def update_node():
+    print "update a node"
+
+
 class Node():
-	def __init__(self, key, attribute = None, graph = None):
-		self.key = key
-		self.parent = []
-		self.neighbor = []
-		self.attribute = attribute
-		self.graph = graph
-		if graph != None:
-			graph.addNode(self)
+    def __init__(self, key, attribute = None, graph = None):
+        self.key = key
+        self.attribute = attribute
+        self.graph = graph
+        self.status = NOT_ABLE_TO_DISTRIBUTE
+        self.sons = [] # nodes that depend on this node
+        if graph != None:
+            graph.addNode(self)
 
 class Dependency_Graph():
-	def __init__(self,):
-		self.V = {}
-		self.E = {}
+    def __init__(self):
+        self.V = {}    # map: key -> node(status...)
+        self.E = {}    # map: node.key -> output edges(map: des_node_key->label)
 
-	def addNode(self,node):
-		self.V[node.key] = node
+    def addNode(self, node):
+        self.V[node.key] = node
+        self.E[node.key] = {}
 
-	def addEdge(self,node1, node2):
-		if node1 not in self.V:
-			self.addNode(node1)
-		if node2 not in self.V:
-			self.addNode(node2)
-		if node1.key not in self.E:
-			self.E[node1.key] = []
-		self.E[node1.key].append(node2.key) #order matters, directed edge
-		node1.neighbor.append(node2.key)
-		node2.parent.append(node1.key)
+    def addEdge(self, key1, key2, label):   # add edge between nodes of key1 and key2 with type of label
+        self.E[key1][key2] = label
+        self.V[key2].sons.append(key1)
 
-	def getNode(self,key):
-		return self.V[key]
+    def getNode(self, key):
+        return self.V[key]
 
-def search(start, G):
-	visited = []
-	queue = deque()
-	queue.append(start)
-	while len(queue) != 0:
-		node = queue.popleft()
-		visited.append(node.key)
-		print(node.key)
-		for neighbor in node.neighbor:
-			neighbor = G.getNode(neighbor)
-			if neighbor.key not in visited:
-				visited.append(neighbor.key)
-				queue.append(neighbor)
-	# done bfs return whatever you want
+    def dump_graph(self):
+        for node_key in self.V:
+            print node_key, self.V[node_key].attribute, ':', self.V[node_key].status, ':', self.V[node_key].sons
+
+    def judge_whether_can_distribute(self, node):
+        flag = True
+        for src_node in self.E[node.key]:
+            node_status = self.V[src_node].status
+            edge_label = self.E[node.key][src_node]
+            # not able to distribute x any
+            if node_status == NOT_ABLE_TO_DISTRIBUTE:
+                flag = False
+                break
+            # able to distribute x finish
+            if node_status == ABLE_TO_DISTRIBUTE and edge_label == 'FINISH':
+                flag = False
+                break
+
+        return flag
+
+
+    def spread_update(self, start):
+        queue = deque()
+        queue.append(start)     # node status changed
+        while len(queue) != 0:
+            node = queue.popleft()
+            print(node.key)
+            for neighbor in node.sons:
+                neighbor = self.getNode(neighbor)
+                # according to status of node and the edge, judge whether this neighour's status is influenced
+                if neighbor.status == NOT_ABLE_TO_DISTRIBUTE and self.judge_whether_can_distribute(neighbor):
+                    neighbor.status = ABLE_TO_DISTRIBUTE
+                    queue.append(neighbor)
+                    
+
+        # done bfs return whatever you want
+    
+    # Kan: update corresponding node's status in dependency graph
+    def update_node(self, node_key, status):
+        # update this node
+        node = G.V[node_key]
+        node.status = status
+        print "======== here to update node ", node.key, "to status ", node.status
+        # spread to whole graph
+        self.spread_update(node)
 
 
 G = None
 
-# Kan: update corresponding node's status in dependency graph
-def update_node():
-    # update this node
-    print "here to update graph"
-    # spread to whole graph
 
 
 
 src_node = None
 
 def handle_line(line):
+    global G
+    global src_node
     # Node: PID INDEX TYPE(ASYNC) SIZE 102400
 
     line = line.strip('N').strip('\n').split('->')
@@ -69,30 +102,18 @@ def handle_line(line):
     # if this line is node:
     if len(line) == 1:
         new_node = line[0].split('_')
-        
-        print new_node
-        src_node = Node((new_node[0], new_node[1]), new_node[2])
-        G.addNode(src_node)
+        src_node = Node(tuple(new_node[0:2]), tuple(new_node[2:]), G)
         return
 
     # if this line is edge:
     # get src node, des node and the edge
-    #src_node = line[0].split('_')
-    tmp = line[1].replace(' ', '').split('[')
+    tmp = line[1].replace(' ', '').strip('N').split('[')
     des_node = tmp[0].split('_')
     edge_label = tmp[1].replace('\"];', '').replace('label=\"', '')
-
-    des_node = G.get_node_by_key((des_node[0],des_node[1]))
-    G.addEdge(src_node, des_node)
-    #print line
-    print src_node, des_node, edge
-    
-    # if new node, init status
-
-    # get label of edges
-
+    G.addEdge(src_node.key, tuple(des_node[0:2]), edge_label)
 
 def init(dependency_knowledge_path):
+    global G
     print "==== start loading the graph"
     # load in the graph
     G = Dependency_Graph()
@@ -101,16 +122,9 @@ def init(dependency_knowledge_path):
     for line in lines:
         handle_line(line)
 
+    # some nodes are able to distribute
+    for node_key in G.E:
+        if G.E[node_key] == {}:
+            G.update_node(node_key, ABLE_TO_DISTRIBUTE)
 
-'''
-if __name__ == '__main__':
-	G = Graph()
-	nodes = []
-	key = 0
-	for i in range(0,10):
-		key = key + 1
-		nodes.append(Node(key, graph = G))
-		if i != 0:
-			G.addEdge(nodes[i-1],nodes[i])
-	search(nodes[0],G)
-'''
+    print "dumping: ", G.dump_graph()

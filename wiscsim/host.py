@@ -24,14 +24,21 @@ class Host(object):
 
     def _process(self):
         # Kan: dependency-aware to distribute events to ncq TODO
-
         for event in self.event_iter:
             if isinstance(event, hostevent.Event) and event.offset < 0:
                 # due to padding, accesing disk head will be negative.
                 continue
 
             if event.action == 'D':
-                #print '=== handling: ', event
+                print '!!!', event
+        
+        for event in self.event_iter:
+            if isinstance(event, hostevent.Event) and event.offset < 0:
+                # due to padding, accesing disk head will be negative.
+                continue
+
+            if event.action == 'D':
+                print '=== handling: ', event
                 yield self._ncq.queue.put(event)
 
     def run(self):
