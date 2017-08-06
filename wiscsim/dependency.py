@@ -14,26 +14,22 @@ FINISHED = 2
 # Output API
 
 def wait_change():                # doesn't return until a node's status is changed
-    '''
-     for i in range(0,10000):
-        print 'get here!!!!!!!!!!'
-        print simpy_env
-    '''
-    #print  G.change_signal.level
-    #yield env.timeout(10)
-    #print 'get in wait'
-    #yield G.change_signal.get()
-    return False
-    
+    #yield simpy_env.timeout(10000)
+    yield G.changed.get(1)
+    #if G.changed:
+    #    G.changed = False
+    #    return True
+    #return False
 
 def update_node(node_key):
-    print "update node: ", node_key
-    if node_key == None:
-        return
-    node = G.getNode(node_key)
-    node.num_bio -= 1
-    if node.num_bio == 0:
-        G.update_node(node.key, FINISHED)
+    #print "update node: ", node_key
+    if node_key != None:
+        node = G.getNode(node_key)
+        node.num_bio -= 1
+        if node.num_bio == 0:
+            #print node.key, 'finished'
+            G.update_node(node.key, FINISHED)
+            yield G.changed.put(1)
 
 def judge_status(node_key):       # check a node's status: whether it's able to distribute
     #print "judge", node_key
@@ -81,8 +77,7 @@ def init(dependency_knowledge_path, env): # init the graph according to a graph 
     print "==== start loading the graph"
     # load in the graph
     G = Dependency_Graph()
-    G.change_signal = simpy.Resource(simpy_env, capacity=1)
-
+    G.changed = simpy.Container(simpy_env)
     fd = open(dependency_knowledge_path)
     lines = fd.readlines()
     for line in lines:
@@ -104,6 +99,7 @@ class Node():
         self.status = NOT_ABLE_TO_DISTRIBUTE
         self.sons = [] # nodes that depend on this node
         self.num_bio = 0 # last bio_index to update status as FINISHED
+        self.changed = None
         if graph != None:
             graph.addNode(self)
 
@@ -150,7 +146,7 @@ class Dependency_Graph():
         queue.append(start)     # node status changed
         while len(queue) != 0:
             node = queue.popleft()
-            print(node.key)
+            #print(node.key)
             for neighbor in node.sons:
                 neighbor = self.getNode(neighbor)
                 # according to status of node and the edge, judge whether this neighour's status is influenced
@@ -166,14 +162,7 @@ class Dependency_Graph():
         # update this node
         node = self.V[node_key]
         node.status = status
-        if self.change_signal.count == 0:
-            yield self.change_signal.put(1)
-        print "======== here to update node ", node.key, "to status ", node.status
+        #print "======== here to update node ", node.key, "to status ", node.status
         # spread to whole graph
         self.spread_update(node)
-
-
-
-
-
 

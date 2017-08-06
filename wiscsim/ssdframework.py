@@ -103,7 +103,6 @@ class Ssd(SsdBase):
         for req_i in itertools.count():
             host_event = yield self.ncq.queue.get()    # Kan: more explanation: the next bio which is able to be distributed
             operation = host_event.get_operation()
-            print "handling" 
             slot_req = self.ncq.slots.request()
             yield slot_req
          
@@ -266,13 +265,12 @@ class Ssd(SsdBase):
 
             self.ncq.slots.release(slot_req)
            
-            print "finishing"
+            #print "finishing"
             # Kan: update the graph module
             node_key = host_event.get_node()
             if node_key != None:
-                print "get here"
                 node_key = tuple(node_key.strip('()').replace('\'','').split(','))
-                dependency.update_node(node_key)
+                yield self.env.process(dependency.update_node(node_key))
 
 
     def _end_all_processes(self):

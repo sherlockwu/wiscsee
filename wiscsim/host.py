@@ -23,10 +23,9 @@ class Host(object):
         return self._ncq
 
     def _process(self):
-        # Kan: dependency-aware to distribute events to ncq TODO
-        to_issue = []
-        print to_issue
+        # Kan: dependency-aware to distribute events to ncq
         # initialize bio status(not issued to ncq), and register it to correpsonding node
+        to_issue = []
         for event in self.event_iter: 
             if isinstance(event, hostevent.Event) and event.offset < 0:
                 # due to padding, accesing disk head will be negative.
@@ -40,37 +39,35 @@ class Host(object):
                     dependency.register(node_key)    # register
         
         while len(to_issue)>0:
-            #print "get there =========================\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
             # handle control event
             has_not_issued_rw = False
+            bio_index = 0
+            issued = []
             for event in to_issue:
-                if isinstance(event, hostevent.Event) and event.offset < 0:
-                    # due to padding, accesing disk head will be negative.
-                    continue
-
-                if event.action == 'D':
-                    #print 'try :', event
-                    if isinstance(event, hostevent.ControlEvent):
-                        if has_not_issued_rw:    #control event is like a barrier, wait all previous bio finish
-                            #print 'control event barrier'
-                            break
-                    node_key = event.get_node()
-                    if node_key != None:
-                        #print '    has node:', node_key
-                        node_key = tuple(node_key.strip('()').replace('\'','').split(','))
-                        if dependency.judge_status(node_key):
-                            to_issue.remove(event)
-                            yield self._ncq.queue.put(event)
-                        else:
-                            has_not_issued_rw = True
-                    else:
-                        #print '    doesnt have node:'
-                        to_issue.remove(event)
+                if isinstance(event, hostevent.ControlEvent):
+                    if has_not_issued_rw:    #control event is like a barrier, wait all previous bio finish
+                        break
+                node_key = event.get_node()
+                if node_key != None:
+                    node_key = tuple(node_key.strip('()').replace('\'','').split(','))
+                    if dependency.judge_status(node_key):
+                        issued.insert(0, bio_index)
+                        #print 'to issue'
                         yield self._ncq.queue.put(event)
-
-            #yield wait until a node's status is changed
-            if not dependency.wait_change():
-                yield self.env.timeout(100000)
+                    else:
+                        has_not_issued_rw = True
+                else:
+                    issued.insert(0, bio_index)
+                    #if not isinstance(event, hostevent.ControlEvent):
+                    #    print 'to issue'
+                    yield self._ncq.queue.put(event)
+                bio_index += 1
+            # delete issued bios
+            for num in issued:
+                del to_issue[num]
+            # wait until a node's status is changed
+            yield self.env.process(dependency.wait_change())
+            #yield self.env.timeout(10000)
 
     def run(self):
         yield self.env.process(self._process())
