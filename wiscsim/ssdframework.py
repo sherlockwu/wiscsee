@@ -106,51 +106,7 @@ class Ssd(SsdBase):
         for req_i in itertools.count():
             host_event = yield self.ncq.queue.get()    # Kan: more explanation: the next bio which is able to be distributed
             operation = host_event.get_operation()
-             
-            # Kan: handle dependency here
-                # judge whether we can handle this request
-            '''
-            tag = -1
-            op_index = -1
-            
-            with self.dependency_lock.request() as d_lock:
-                yield d_lock
-                #if DEBUG_DEPENDENCY:
-                    #if operation == OP_READ or operation == OP_WRITE:
-                    #    print host_event
-                # barrier 
-                if host_event.get_operation() == 'BARRIER':
-                    #if DEBUG_DEPENDENCY:
-                    #    print '\n\n\n\n\n\n======BARRIER FROM APPLICATION======\n\n\n\n\n\n'
-                    while self.handling_requests.level>0:
-                         yield self.env.timeout(50*self.handling_requests.level)
-                    if DEBUG_DEPENDENCY:
-                        print '\n\n\n\n\n\n======BARRIER FROM APPLICATION======\n\n\n\n\n\n'
-                
-                # for tag dependency
-                # TODO!!!!!!!!
-                tag, op_index = host_event.get_tags()  # all int
-                tag = str(tag)
-                if tag != '-1':
-                    # judge whether need to wait
-                    if DEBUG_DEPENDENCY:
-                        flag = False    # to sign whether there is a dependency
-                        if self.tags.has_key(tag) and self.tags[tag][0]!=op_index:
-                            flag = True
-                    while self.tags.has_key(tag) and self.tags[tag][0]!=op_index:
-                        yield self.env.timeout(500)      # may change
-                    if DEBUG_DEPENDENCY:
-                        if flag:
-                            print '\n======DEPENDENCY FROM APPLICATION======\n'
-                    with self.tag_lock.request() as t_lock:
-                        yield t_lock
-                        if not self.tags.has_key(tag):
-                            self.tags[tag] = [op_index, 1]
-                        else:
-                            self.tags[tag][1] += 1  # count++
-                        #print '!!!!!!!!!!!!!', self.tags
-
-            '''
+            print "handling" 
             slot_req = self.ncq.slots.request()
             yield slot_req
          
@@ -313,21 +269,14 @@ class Ssd(SsdBase):
 
             self.ncq.slots.release(slot_req)
            
-            # Kan: TODO update the graph module
-            dependency.update_node()
+            print "finishing"
+            # Kan: update the graph module
+            node_key = host_event.get_node()
+            if node_key != None:
+                print "get here"
+                node_key = tuple(node_key.strip('()').replace('\'','').split(','))
+                dependency.update_node(node_key)
 
-            # Kan: for barrier
-            # yield self.handling_requests.get(1)   # finished one request
-            # print 'finished one: ', self.handling_requests.level
-            # for tag dependency
-            '''
-            if tag!= '-1':
-                with self.tag_lock.request() as t_lock:
-                    yield t_lock
-                    self.tags[tag][1] -= 1
-                    if self.tags[tag][1] == 0:
-                        del self.tags[tag]
-            '''
 
     def _end_all_processes(self):
         for i in range(self.n_processes):

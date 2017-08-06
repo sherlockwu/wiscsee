@@ -1,5 +1,8 @@
 from collections import deque
 
+G = None
+
+
 # status constant of nodes
 NOT_ABLE_TO_DISTRIBUTE = 0
 ABLE_TO_DISTRIBUTE = 1
@@ -8,10 +11,32 @@ FINISHED = 2
 # label of edge
 
 # Output API
-def update_node():
-    print "update a node"
+def update_node(node_key):
+    print "update node: ", node_key
+    if node_key == None:
+        return
+    node = G.getNode(node_key)
+    node.num_bio -= 1
+    if node.num_bio == 0:
+        G.update_node(node.key, FINISHED)
+
+def judge_status(node_key):       # check a node's status: whether it's able to distribute
+    #print "judge", node_key
+    if node_key == None:
+        return True
+    node =  G.getNode(node_key)
+    #print "::::", node.key, node.attribute, node.last_bio
+    if node.status == ABLE_TO_DISTRIBUTE:
+        return True
+    else:
+        return False
+
+def register(node_key):
+    node = G.getNode(node_key)
+    node.num_bio += 1
 
 
+# Data structures
 class Node():
     def __init__(self, key, attribute = None, graph = None):
         self.key = key
@@ -19,6 +44,7 @@ class Node():
         self.graph = graph
         self.status = NOT_ABLE_TO_DISTRIBUTE
         self.sons = [] # nodes that depend on this node
+        self.num_bio = 0 # last bio_index to update status as FINISHED
         if graph != None:
             graph.addNode(self)
 
@@ -85,7 +111,6 @@ class Dependency_Graph():
         self.spread_update(node)
 
 
-G = None
 
 
 

@@ -18,8 +18,8 @@ class ControlEvent(HostEventBase):
         self.action = 'D' # following the format of data event
     
     # for dependency
-    def get_tags(self):
-        return -1, -1
+    def get_node(self):
+        return None
 
     def get_operation(self):
         return self.operation
@@ -38,7 +38,7 @@ class Event(HostEventBase):
 
     # for dependency
     def __init__(self, sector_size, pid, operation, offset, size,
-            timestamp = None, pre_wait_time = None, sync = True, action = 'D', tag = -1, op_index=-1):
+            timestamp = None, pre_wait_time = None, sync = True, action = 'D', node_key = None):
         self.pid = int(pid)
         self.operation = operation
         self.offset = int(offset)
@@ -49,8 +49,7 @@ class Event(HostEventBase):
         self.action = action
 
         # for dependency
-        self.tag = tag
-        self.op_index = op_index
+        self.node_key = node_key
 
         assert action in ('D', 'C'), "action:{}".format(action)
 
@@ -66,8 +65,8 @@ class Event(HostEventBase):
         self.sector_count = self.size / sector_size
 
     # for dependency
-    def get_tags(self):
-        return self.tag, self.op_index
+    def get_node(self):
+        return self.node_key
 
     def get_operation(self):
         return self.operation
@@ -83,12 +82,12 @@ class Event(HostEventBase):
     def __str__(self):
         return "Event pid:{pid}, operation:{operation}, offset:{offset}, "\
                 "size:{size}, sector:{sector}, sector_count:{sector_count}, "\
-                "sync:{sync}, timestamp:{timestamp}, action:{action}"\
+                "sync:{sync}, timestamp:{timestamp}, action:{action}, node:{node_key}"\
                 .format(pid = self.pid, operation = self.operation,
                         offset = self.offset, size = self.size,
                         sector = self.sector, sector_count = self.sector_count,
                         sync = self.sync, timestamp = self.timestamp,
-                        action = self.action)
+                        action = self.action, node_key = self.node_key)
 
 
 class FileLineIterator(object):
@@ -133,13 +132,9 @@ class EventIterator(object):
 
         dic['operation'] = self._convert(dic['operation'])
         
-        if len(self.event_file_column_names)+2 == len(items):
+        if len(self.event_file_column_names)+1 == len(items):
             # TODO
-            dic['tag'] = str(items[-1])
-            dic['op_index'] = str(items[-2])
-        else:
-            dic['tag'] = -1
-            dic['op_index'] = -1
+            dic['node_key'] = str(items[-1]).replace('[', '(').replace(']', ')')
 
         return Event(**dic)
 
