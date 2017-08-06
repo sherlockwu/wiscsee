@@ -17,7 +17,7 @@ class Host(object):
 
         # init the dependency graph
         print "\n\n\n=============\n", self.conf['dependency_knowledge_path'], "\n============\n\n\n"
-        dependency.init(self.conf['dependency_knowledge_path'])
+        dependency.init(self.conf['dependency_knowledge_path'], simpy_env)
 
     def get_ncq(self):
         return self._ncq
@@ -34,7 +34,6 @@ class Host(object):
 
             if event.action == 'D':
                 to_issue.append(event)
-                print '!!!', event
                 node_key = event.get_node()
                 if node_key != None:
                     node_key = tuple(node_key.strip('()').replace('\'','').split(','))
@@ -42,31 +41,36 @@ class Host(object):
         
         while len(to_issue)>0:
             #print "get there =========================\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
-            #print issued 
             # handle control event
+            has_not_issued_rw = False
             for event in to_issue:
                 if isinstance(event, hostevent.Event) and event.offset < 0:
                     # due to padding, accesing disk head will be negative.
                     continue
 
                 if event.action == 'D':
+                    #print 'try :', event
                     if isinstance(event, hostevent.ControlEvent):
-                        print 'control event!'    # like a barrier
-                        if to_issue.index(event) != 0:
-                            print to_issue
-                            yield self.env.timeout(to_issue.index(event)*100)
-                            print 'control event barrier'
+                        if has_not_issued_rw:    #control event is like a barrier, wait all previous bio finish
+                            #print 'control event barrier'
                             break
                     node_key = event.get_node()
                     if node_key != None:
+                        #print '    has node:', node_key
                         node_key = tuple(node_key.strip('()').replace('\'','').split(','))
                         if dependency.judge_status(node_key):
                             to_issue.remove(event)
                             yield self._ncq.queue.put(event)
+                        else:
+                            has_not_issued_rw = True
                     else:
+                        #print '    doesnt have node:'
                         to_issue.remove(event)
                         yield self._ncq.queue.put(event)
 
+            #yield wait until a node's status is changed
+            if not dependency.wait_change():
+                yield self.env.timeout(100000)
 
     def run(self):
         yield self.env.process(self._process())

@@ -1,7 +1,8 @@
 from collections import deque
+import simpy
 
 G = None
-
+simpy_env = None
 
 # status constant of nodes
 NOT_ABLE_TO_DISTRIBUTE = 0
@@ -11,6 +12,20 @@ FINISHED = 2
 # label of edge
 
 # Output API
+
+def wait_change():                # doesn't return until a node's status is changed
+    '''
+     for i in range(0,10000):
+        print 'get here!!!!!!!!!!'
+        print simpy_env
+    '''
+    #print  G.change_signal.level
+    #yield env.timeout(10)
+    #print 'get in wait'
+    #yield G.change_signal.get()
+    return False
+    
+
 def update_node(node_key):
     print "update node: ", node_key
     if node_key == None:
@@ -31,10 +46,54 @@ def judge_status(node_key):       # check a node's status: whether it's able to 
     else:
         return False
 
-def register(node_key):
+def register(node_key):           # register a bio to a node
     node = G.getNode(node_key)
     node.num_bio += 1
 
+src_node = None
+
+def handle_line(line):            # add edges/nodes to the graph according to text
+    global G
+    global src_node
+    # Node: PID INDEX TYPE(ASYNC) SIZE 102400
+
+    line = line.strip('N').strip('\n').split('->')
+    
+    # if this line is node:
+    if len(line) == 1:
+        new_node = line[0].split('_')
+        src_node = Node(tuple(new_node[0:2]), tuple(new_node[2:]), G)
+        return
+
+    # if this line is edge:
+    # get src node, des node and the edge
+    tmp = line[1].replace(' ', '').strip('N').split('[')
+    des_node = tmp[0].split('_')
+    edge_label = tmp[1].replace('\"];', '').replace('label=\"', '')
+    G.addEdge(src_node.key, tuple(des_node[0:2]), edge_label)
+
+
+def init(dependency_knowledge_path, env): # init the graph according to a graph text
+    global G
+    global simpy_env
+
+    simpy_env = env
+    print "==== start loading the graph"
+    # load in the graph
+    G = Dependency_Graph()
+    G.change_signal = simpy.Resource(simpy_env, capacity=1)
+
+    fd = open(dependency_knowledge_path)
+    lines = fd.readlines()
+    for line in lines:
+        handle_line(line)
+
+    # some nodes are able to distribute
+    for node_key in G.E:
+        if G.E[node_key] == {}:
+            G.update_node(node_key, ABLE_TO_DISTRIBUTE)
+
+    print "dumping: ", G.dump_graph()
 
 # Data structures
 class Node():
@@ -52,6 +111,7 @@ class Dependency_Graph():
     def __init__(self):
         self.V = {}    # map: key -> node(status...)
         self.E = {}    # map: node.key -> output edges(map: des_node_key->label)
+        self.change_signal = None # signal in simpy env to say there is a node's status changed
 
     def addNode(self, node):
         self.V[node.key] = node
@@ -104,8 +164,10 @@ class Dependency_Graph():
     # Kan: update corresponding node's status in dependency graph
     def update_node(self, node_key, status):
         # update this node
-        node = G.V[node_key]
+        node = self.V[node_key]
         node.status = status
+        if self.change_signal.count == 0:
+            yield self.change_signal.put(1)
         print "======== here to update node ", node.key, "to status ", node.status
         # spread to whole graph
         self.spread_update(node)
@@ -115,41 +177,3 @@ class Dependency_Graph():
 
 
 
-src_node = None
-
-def handle_line(line):
-    global G
-    global src_node
-    # Node: PID INDEX TYPE(ASYNC) SIZE 102400
-
-    line = line.strip('N').strip('\n').split('->')
-    
-    # if this line is node:
-    if len(line) == 1:
-        new_node = line[0].split('_')
-        src_node = Node(tuple(new_node[0:2]), tuple(new_node[2:]), G)
-        return
-
-    # if this line is edge:
-    # get src node, des node and the edge
-    tmp = line[1].replace(' ', '').strip('N').split('[')
-    des_node = tmp[0].split('_')
-    edge_label = tmp[1].replace('\"];', '').replace('label=\"', '')
-    G.addEdge(src_node.key, tuple(des_node[0:2]), edge_label)
-
-def init(dependency_knowledge_path):
-    global G
-    print "==== start loading the graph"
-    # load in the graph
-    G = Dependency_Graph()
-    fd = open(dependency_knowledge_path)
-    lines = fd.readlines()
-    for line in lines:
-        handle_line(line)
-
-    # some nodes are able to distribute
-    for node_key in G.E:
-        if G.E[node_key] == {}:
-            G.update_node(node_key, ABLE_TO_DISTRIBUTE)
-
-    print "dumping: ", G.dump_graph()

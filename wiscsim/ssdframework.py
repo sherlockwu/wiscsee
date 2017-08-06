@@ -73,9 +73,6 @@ class Ssd(SsdBase):
         self.gc_sleep_duration = 10
 
         # dependency
-        self.dependency_lock = simpy.Resource(simpy_env, capacity=1)
-        self.tag_lock = simpy.Resource(simpy_env, capacity=1)
-        self.tags = {}
         self.handling_requests = simpy.Container(simpy_env, self.ncq.ncq_depth, 0)
 
     def _create_ftl(self):
