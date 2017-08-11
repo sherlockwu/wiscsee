@@ -27,6 +27,7 @@ if __name__=='__main__':
     })
     para['device_path'] = "/dev/sdc1"
     para['filesystem'] = "ext4"
+    para['dependency_knowledge_path'] = "/tmp/results"
     #para['ftl'] = "ftlcounter" # for see ncq_depth
     para['enable_simulation'] = True
     para['do_ncq_depth_time_line'] = True
