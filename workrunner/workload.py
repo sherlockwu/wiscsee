@@ -115,7 +115,7 @@ class external_sort_bench(Workload):
         print "====== get in external sorting benchmark"
         #cmd = "cp -r /users/kanwu/leveldb/app_leveldb/ " + mnt
         #subprocess.call(cmd, shell=True)
-	app_external_sort = "/users/kanwu/external_sort/code/"
+	app_external_sort = "/users/kanwu/External_Sorting/code/"
         os.chdir(app_external_sort)
         #cmd = "./merge_sort 16777216 4"
         cmd = "./merge_sort 65536 4"
